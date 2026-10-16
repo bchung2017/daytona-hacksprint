@@ -44,7 +44,7 @@ Known values (not secrets): `MEMORY_URL=https://srv1.spectron.aws-usw2.surreal.c
 
 ```bash
 cd /home/user/daytona-hacksprint
-git fetch origin claude/vibrant-hopper-fz3g9w && git checkout claude/vibrant-hopper-fz3g9w && git pull
+git fetch origin main && git checkout main && git pull
 for k in DAYTONA_API_KEY ANTHROPIC_API_KEY APP_ANTHROPIC_API_KEY ANCHOR_API_KEY ELEVENLABS_API_KEY ELEVENLABS_AGENT_ID \
          CPA_TOOL_SECRET ARIZE_SPACE_ID ARIZE_API_KEY MEMORY_URL MEMORY_CONTEXT MEMORY_API_KEY ELEVENLABS_WEBHOOK_SECRET; do
   [ -n "${!k}" ] && echo "set   $k" || echo "unset $k"; done
@@ -115,7 +115,7 @@ The user configures the agent per `ELEVENLABS.md` using the URLs and tool secret
 - Children: `env_vars={}`, `ephemeral=True`, `network_block_all=True`. Tier 3 gives sandboxes open egress by default, so the
   child's `NET_BLOCKED` depends on that flag; don't drop it.
 - Don't delete sandboxes without asking the user.
-- Push to `claude/vibrant-hopper-fz3g9w` only. No PR unless asked.
+- Push to `main` only. No PR unless asked.
 
 ## Open items after green
 
