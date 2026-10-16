@@ -123,6 +123,17 @@ def api_approve(claim_id):
     return jsonify(c)
 
 
+@app.post("/api/claims/<claim_id>/acknowledge")
+def api_acknowledge(claim_id):
+    """Human sign-off on a verdict with no figure to verify (not eligible, uncited, compute error)."""
+    r = store.q("UPDATE ONLY $c SET human_approved_at = time::now() "
+                "WHERE state IN ['not_eligible', 'uncited', 'compute_error'] AND superseded_by = NONE RETURN AFTER",
+                c=store.rid(claim_id))
+    if not r:
+        abort(409, "only a verdict without a CPA figure can be acknowledged here")
+    return jsonify(r)
+
+
 @app.post("/api/cpa_tool")
 def api_cpa_tool():
     if not voice.tool_secret_ok(request.headers.get("X-Tool-Secret")):

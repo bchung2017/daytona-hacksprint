@@ -388,7 +388,7 @@ function narrateClaim(c) {
     case "rejected": return [`The CPA came back with ${money(c.cpa_value)} for ${who}, not ${money(c.agent_value)}. Marking this one wrong and recomputing with their correction.`, "bad", I.x];
     case "needs-info": return [`The CPA wasn't certain about ${who}'s figure. Holding until they confirm it plainly.`, "warn", I.q];
     case "approved": return [`Approved. ${who}'s ${prog} credit of ${money(c.agent_value)} is signed off.`, "ok", I.check];
-    default: return null;
+    default: return c.human_approved_at ? [`You signed off on the verdict for ${who} on ${prog}.`, "ok", I.check] : null;
   }
 }
 
@@ -434,18 +434,22 @@ const VERDICT = {
   compute_error: ["bad", "Couldn't compute", I.x], not_eligible: ["neutral", "Not eligible", I.x],
   sent: ["info", "With the CPA now", I.phone], confirmed: ["ok", "CPA agrees, checking match", I.check],
   rejected: ["bad", "CPA disagrees", I.x], "needs-info": ["warn", "CPA unsure, on hold", I.q],
-  ready: ["ok", "Verified. Ready to approve", I.check], approved: ["ok", "Approved", I.check],
+  ready: ["ok", "CPA verified. Your approval needed", I.check], approved: ["ok", "Approved", I.check],
 };
+function verdictOf(c) {
+  if (c.human_approved_at) return ["ok", VERDICT[c.state][1] + ". Approved", I.check];
+  return VERDICT[c.state] || ["neutral", c.state, I.file];
+}
 function plainReason(c) {
   if (c.superseded_by) return "An updated version of this claim replaced it.";
   if (c.state === "not_eligible" && /superseded/.test(c.reason || "")) return "This is an older version of the credit; the current version was checked instead.";
-  if (c.state === "ready") return "The CPA's independent figure matches ours within tolerance. Only a human click can approve it.";
+  if (c.state === "ready") return "The CPA's independent figure matches ours. One more click from you and it's approved.";
   if (c.state === "approved") return "Signed off by a human after an independent CPA match.";
-  if (c.state === "sent") return "The CPA has the inputs and a one-time code, but not our figure.";
+  if (c.state === "sent") return "Approval in progress: the CPA is verifying the figure blind. It comes back to you when they're done.";
   if (c.state === "rejected") return "The CPA's figure differs from ours. A corrected claim is being prepared.";
   if (c.state === "needs-info") return "The CPA hedged or didn't confirm on read-back. Nothing moves until they do.";
-  if (c.state === "unverified") return "Every rule we could quote checked out. Step 2 is sending it to a CPA who works it out blind.";
-  if (c.state === "not_eligible") return "One of the rules isn't met. The details are on the right.";
+  if (c.state === "unverified") return "Every rule we could quote checked out. Approving sends the figure to an independent CPA before it's final.";
+  if (c.state === "not_eligible") return c.human_approved_at ? "You signed off on this verdict." : "One of the rules isn't met. The details are on the right. Approve the verdict to close it out.";
   return humanize(c.reason || "");
 }
 /* "Hire window: met - detail; Hours: not met - detail" -> rows with a verdict icon each. */
@@ -464,8 +468,13 @@ function checklist(reason) {
   });
   return `<ul class="checks">${rows.join("")}</ul>`;
 }
-const STEPS = ["Checked", "CPA call", "Approve"];
-function stepOf(state) { return ["approved"].includes(state) ? 3 : ["sent", "confirmed", "rejected", "needs-info", "ready"].includes(state) ? 2 : ["unverified"].includes(state) ? 1 : 0; }
+function stepsOf(c) {
+  const viaCpa = !["not_eligible", "uncited", "compute_error"].includes(c.state);
+  const steps = viaCpa ? ["Checked", "CPA verifies", "Approved"] : ["Checked", "Approved"];
+  const at = c.state === "approved" || c.human_approved_at ? steps.length
+    : ["sent", "confirmed", "rejected", "needs-info", "ready"].includes(c.state) ? 2 : 1;
+  return [steps, at];
+}
 
 function render() {
   const PRI = {approved: 0, ready: 1, sent: 2, confirmed: 2, "needs-info": 2, rejected: 2, unverified: 3, uncited: 4, compute_error: 4, not_eligible: 5};
@@ -475,7 +484,7 @@ function render() {
   const el = document.getElementById("claims");
   if (!all.length) { el.innerHTML = '<div class="card empty">No results yet. Run the agent from the top right.</div>'; return; }
   const card = c => {
-    const [tone, label, icon] = VERDICT[c.state] || ["neutral", c.state, I.file];
+    const [tone, label, icon] = verdictOf(c);
     const sid = (c.agent_inputs || {}).subject_id || c.company_id;
     const person = PEOPLE[sid] || {};
     const inputs = c.agent_inputs || {};
@@ -489,11 +498,9 @@ function render() {
         <div class="status ${tone}">${icon} ${esc(label)}</div>
         <div class="who">${esc(nameOf(sid))}<small>${esc(person.role ? person.role + " · " : "")}${esc(shortProg(c.program_id))}</small></div>
         <p class="small" style="margin:0">${esc(plainReason(c))}</p>
-        ${stepOf(c.state) ? `<ol class="steps">${STEPS.map((t, i) => `<li class="${i < stepOf(c.state) ? "done" : i === stepOf(c.state) ? "next" : ""}"><i>${i + 1}</i>${t}</li>`).join("")}</ol>` : ""}
+        ${c.superseded_by ? "" : (([steps, at]) => `<ol class="steps">${steps.map((t, i) => `<li class="${i < at ? "done" : i === at ? "next" : ""}"><i>${i + 1}</i>${t}</li>`).join("")}</ol>`)(stepsOf(c))}
         <div class="actions">
-          ${c.state === "unverified" && !c.superseded_by ? `<button class="btn ghost" onclick="send('${esc(c.id)}')">Send to CPA</button>` : ""}
-          ${c.state === "sent" ? `<a class="btn ghost" href="/cpa?claim=${encodeURIComponent(c.id)}" target="_blank">Open the CPA's page</a>` : ""}
-          ${c.state === "ready" ? `<button class="btn ok" onclick="approve('${esc(c.id)}')">Approve ${money(c.agent_value)}</button>` : ""}
+          ${c.superseded_by ? "" : actionFor(c)}
         </div>
       </div>
       <div class="results">
@@ -521,6 +528,23 @@ function render() {
     (old.length ? `<details class="tech"><summary>${old.length} more: older versions of a credit, or claims that were replaced</summary><div style="padding-top:14px">${old.map(card).join("")}</div></details>` : "");
   renderScenarios();
 }
+function actionFor(c) {
+  const id = esc(c.id);
+  switch (c.state) {
+    case "unverified": return `<button class="btn" onclick="send('${id}')">Approve</button><span class="small dim" style="align-self:center">goes to the CPA first</span>`;
+    case "sent": case "confirmed": return `<button class="btn" disabled style="opacity:.55">Awaiting CPA verification</button><a class="btn ghost" href="/cpa?claim=${encodeURIComponent(c.id)}" target="_blank">Open the CPA's page</a>`;
+    case "needs-info": return `<button class="btn" disabled style="opacity:.55">CPA must confirm first</button>`;
+    case "rejected": return `<button class="btn" disabled style="opacity:.55">CPA disagreed. Corrected claim coming</button>`;
+    case "ready": return `<button class="btn ok" onclick="approve('${id}')">Approve ${money(c.agent_value)}</button>`;
+    case "approved": return "";
+    default: return c.human_approved_at ? "" : `<button class="btn" onclick="acknowledge('${id}')">Approve verdict</button>`;
+  }
+}
+async function acknowledge(id) {
+  const r = await fetch(`/api/claims/${encodeURIComponent(id)}/acknowledge`, {method: "POST"});
+  if (!r.ok) alert(await r.text());
+  loadClaims();
+}
 async function loadClaims() { (await (await fetch("/api/claims")).json()).forEach(c => claims.set(c.id, c)); render(); }
 async function send(id) {
   const r = await fetch(`/api/claims/${encodeURIComponent(id)}/send`, {method: "POST"});
@@ -536,9 +560,9 @@ async function approve(id) {
 /* ---------- Tab 4: scenarios ---------- */
 const SCENARIOS = [
   { key: "approve", states: ["ready", "approved", "confirmed"], tone: "ok", icon: I.check, title: "The CPA approves",
-    flow: [["Our figure: $12,600"], ["CPA says: $12,600", "ok"], ["Database confirms the match", "ok"], ["You click Approve", "ok"]],
+    flow: [["You click Approve"], ["CPA says: $12,600", "ok"], ["Database confirms the match", "ok"], ["You click Approve again, it's final", "ok"]],
     quote: "“Fifteen percent of eighty-four thousand, under the cap. Twelve thousand six hundred. Yes, confirmed.”",
-    body: "Two independent figures agree. Only now does the Approve button appear, and only a human can press it." },
+    body: "One flow for everything: Approve sends the figure to the CPA blind, and when their number matches ours it comes back for your final click." },
   { key: "deny", states: ["rejected"], tone: "bad", icon: I.x, title: "The CPA denies, with a small adjustment",
     flow: [["Our figure: $12,600"], ["CPA says: $11,700", "bad"], ["Marked wrong", "bad"], ["Recomputed with the CPA's note"]],
     quote: "“Your wage number includes a signing bonus. Qualified wages are seventy-eight thousand, so it's eleven thousand seven hundred.”",
@@ -572,14 +596,15 @@ document.getElementById("run").onclick = async e => {
 new EventSource("/api/stream").onmessage = e => {
   const c = JSON.parse(e.data); if (!c.id) return;
   claims.set(c.id, c); render();
-  if (seenClaimState.get(c.id) !== c.state) {
-    seenClaimState.set(c.id, c.state);
+  const key = c.state + "|" + (c.human_approved_at || "");
+  if (seenClaimState.get(c.id) !== key) {
+    seenClaimState.set(c.id, key);
     const n = narrateClaim(c); if (n) pushEvent(n, c.cpa_at || new Date().toISOString());
   }
   loadLog();
 };
 renderStages(); renderScenarios();
-loadClaims().then(() => { [...claims.values()].forEach(c => seenClaimState.set(c.id, c.state)); loadLog(); });
+loadClaims().then(() => { [...claims.values()].forEach(c => seenClaimState.set(c.id, c.state + "|" + (c.human_approved_at || ""))); loadLog(); });
 setInterval(loadLog, 2000);
 </script>
 </body>
