@@ -105,6 +105,8 @@
   .typing i { width:6px; height:6px; border-radius:50%; background:var(--maroon); animation:blink 1.2s infinite; }
   .typing i:nth-child(2) { animation-delay:.2s; } .typing i:nth-child(3) { animation-delay:.4s; }
   @keyframes blink { 0%,80%,100% { opacity:.2; } 40% { opacity:1; } }
+  .thread .tw { padding:16px 18px; display:grid; grid-template-columns:34px 1fr; gap:10px; }
+  .thread .tw .n { font:800 15px Fraunces, serif; color:var(--brown); } .thread .tw p { margin:0; font-size:14px; line-height:1.5; } .thread .tw b { color:var(--maroon-deep); }
   details.tech { margin-top:16px; }
   details.tech summary { cursor:pointer; color:var(--dim); font-size:13px; font-weight:600; padding:10px 14px; background:var(--white); border:1px solid var(--line); border-radius:10px; list-style:none; display:flex; align-items:center; gap:8px; }
   details.tech[open] summary { border-radius:10px 10px 0 0; }
@@ -380,6 +382,16 @@
         </button></div>
       <div class="stages" id="stages"></div>
       <div class="feed" id="feed"><div class="idle">Opening this tab starts the run.</div></div>
+    </div>
+    <div style="margin-top:24px" class="eyebrow">Math breakdown</div>
+    <h2 style="margin:4px 0 12px">Every credit has its own math. None of it runs on a laptop.</h2>
+    <div class="grid g3 thread">
+      <div class="card tw"><div class="n">1/</div><p>There is no one formula. Hire a Veteran is 15% of wages with a cap that halves for part-time. WOTC is 40% of the first $14k. The Investment Tax Credit is 5% of equipment cost. Each one is its own little program.</p></div>
+      <div class="card tw"><div class="n">2/</div><p>So TaxBeagle writes a small program per credit, per person, from the quoted rules. It never runs it here. <b>Daytona</b> spins up a sealed sandbox: no network, no keys, nothing but the inputs. Run, read the number, throw the box away.</p></div>
+      <div class="card tw"><div class="n">3/</div><p>The rules it quotes come from the real government pages, fetched through <b>Anchor</b>'s cloud browser. A fact only counts if the quote is found word for word in the page. No paraphrase, no memory.</p></div>
+      <div class="card tw"><div class="n">4/</div><p>The result, the quotes and the CPA's number all land in <b>SurrealDB</b>. The database itself holds the gate: a claim can only become "ready" if the CPA's figure matches ours. Python can't override it.</p></div>
+      <div class="card tw"><div class="n">5/</div><p>Live-query from SurrealDB pushes every state change to this screen. What you're watching is the record, not a progress bar.</p></div>
+      <div class="card tw"><div class="n">6/</div><p>Net: one credit, one sandbox, one quoted rule set, one independent CPA, one database gate, one human click. That's the whole trick.</p></div>
     </div>
     <details class="tech">
       <summary>Technical log, for debugging</summary>
