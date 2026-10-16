@@ -9,7 +9,7 @@ import httpx
 from tracing import span
 
 URL, CTX, KEY = os.getenv("MEMORY_URL", "").rstrip("/"), os.getenv("MEMORY_CONTEXT"), os.getenv("MEMORY_API_KEY")
-SCOPE = os.getenv("MEMORY_SCOPE", "org/incentive-agent")
+SCOPE = os.getenv("MEMORY_SCOPE", "")  # blank: facts land in the key's default write region, no registration needed
 ENABLED = bool(URL and CTX and KEY)
 
 
@@ -27,7 +27,9 @@ def _post(path, body, idem=None):
 def remember(text, observed_at=None, idem=None):
     if not ENABLED:
         return
-    body = {"text": text, "infer": "full", "scopes": [[SCOPE]]}
+    body = {"text": text, "infer": "full"}
+    if SCOPE:
+        body["scopes"] = [[SCOPE]]  # must be registered in Studio > Scopes first
     if observed_at:
         body["observed_at"] = observed_at
     threading.Thread(target=lambda: _safe(_post, "facts", body, idem), daemon=True).start()

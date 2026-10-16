@@ -261,9 +261,9 @@ source { program_id, url, content_hash, text, fetched_at, superseded_by }
 
 ### Agent Memory mirror
 
-`steps/memory.py` posts to `/api/v1/{ctx}/facts` with `infer: "full"`, `scopes: [[MEMORY_SCOPE]]`, `observed_at` = fetch time, and an `Idempotency-Key` per claim and criterion. It runs off the request path and never blocks or fails a claim. The pitch line: `asOf` recall answers "what did the agent believe the Hire a Veteran terms were on date X", and that answer comes from SurrealDB's own supersession chain.
+`steps/memory.py` posts to `/api/v1/{ctx}/facts` with `infer: "full"`, `scopes` only when `MEMORY_SCOPE` is set, `observed_at` = fetch time, and an `Idempotency-Key` per claim and criterion. It runs off the request path and never blocks or fails a claim. The pitch line: `asOf` recall answers "what did the agent believe the Hire a Veteran terms were on date X", and that answer comes from SurrealDB's own supersession chain.
 
-Open item: scoped writes need the scope path registered first. The documented route is the CLI (`agent-memory scopes create org/incentive-agent`); the REST body for `POST /scopes` isn't verified. A 403 on the first write means this. Register the scope in Studio.
+Scopes: a write without `scopes` is tagged with the key's default `memory:write` region, so no registration is needed. If `MEMORY_SCOPE` is set, register that path first in Studio > Scopes, or scoped writes are refused.
 
 ## CPA voice verification and safety checks
 
@@ -311,7 +311,7 @@ Run these during setup, in order. The first one can invalidate the whole topolog
 - [ ] `ANTHROPIC_API_KEY` can call Fable 5.1. If not, Opus does both roles; update the pitch line.
 - [ ] Anchor session loads one target program page and returns text through the SDK.
 - [ ] SurrealDB claims database in the parent: one write, one read, a LIVE notification, and the gate refusing `approved` on mismatched values (`smoke.py` covers all four).
-- [ ] SurrealDB Agent Memory: `/me` answers with the context key; the scope is registered; one fact write succeeds.
+- [ ] SurrealDB Agent Memory: `/me` answers with the context key; one fact write succeeds.
 - [ ] ElevenLabs agent embed renders on `/cpa`, and a test server-tool call reaches `/api/cpa_tool` through the preview link.
 - [ ] One trace shows up in Arize with a nested span.
 - [ ] Two real NY programs picked, one current and one expired or changed. Seed company profile clears one threshold and misses another by about 5%.

@@ -106,9 +106,14 @@ def _():
     if not (url and ctx and key):
         return "SKIP: MEMORY_* unset"
     h = {"Authorization": f"Bearer {key}"}
-    r = httpx.get(f"{url.rstrip('/')}/api/v1/{ctx}/me", headers=h, timeout=15)
-    r.raise_for_status()
-    return f"/me {r.status_code}"
+    base = f"{url.rstrip('/')}/api/v1/{ctx}"
+    httpx.get(f"{base}/me", headers=h, timeout=15).raise_for_status()
+    body = {"text": "Smoke test: incentive-agent can write to this context.", "infer": "none"}
+    if os.getenv("MEMORY_SCOPE"):
+        body["scopes"] = [[os.environ["MEMORY_SCOPE"]]]
+    w = httpx.post(f"{base}/facts", headers=h, json=body, timeout=30)
+    w.raise_for_status()
+    return f"/me ok, fact write {w.status_code} chunkId={w.json().get('chunkId')}"
 
 
 @check("elevenlabs key")
