@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CPA Verification</title>
+<style>
+  :root { --bg:#0f1115; --panel:#171a21; --line:#262b36; --text:#e6e8ee; --dim:#8b93a7; --accent:#6aa8ff; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 ui-sans-serif, system-ui, sans-serif; }
+  .wrap { max-width:560px; margin:40px auto; padding:0 16px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .code { font:700 44px/1 ui-monospace, monospace; letter-spacing:.2em; margin:12px 0; color:var(--accent); }
+  .dim { color:var(--dim); font-size:13px; }
+  dl { display:grid; grid-template-columns:auto 1fr; gap:6px 12px; } dt { color:var(--dim); } dd { margin:0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  {% if not claim %}
+  <div class="card"><h2>No active verification</h2><p class="dim">This link has expired or the claim was already verified.</p></div>
+  {% else %}
+  <div class="card">
+    <div class="dim">Verification code. Read it to the agent when asked.</div>
+    <div class="code">{{ code }}</div>
+    <dl>
+      <dt>Company</dt><dd>{{ company.name }}</dd>
+      <dt>Program</dt><dd>{{ program.name }}</dd>
+      <dt>Subject</dt><dd>{{ subject.description }} (hired {{ subject.hire_date }})</dd>
+      <dt>Hours</dt><dd>{{ "{:,}".format(subject.hours_first_12_months) }} in first 12 months</dd>
+      <dt>Wages</dt><dd>${{ "{:,}".format(subject.wages_first_12_months) }} in first 12 months</dd>
+    </dl>
+    <p class="dim">Compute the credit independently. The agent will not tell you its figure.</p>
+  </div>
+  {% if agent_id %}
+  <elevenlabs-convai agent-id="{{ agent_id }}" dynamic-variables='{{ dynamic_variables }}'></elevenlabs-convai>
+  <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+  {% else %}
+  <p class="dim">ELEVENLABS_AGENT_ID is not set.</p>
+  {% endif %}
+  {% endif %}
+</div>
+</body>
+</html>

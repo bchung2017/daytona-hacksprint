@@ -1,0 +1,65 @@
+[
+  {
+    "case": "superseded_program",
+    "description": "2020 Hire a Veteran instructions are replaced by the current terms",
+    "setup": {},
+    "expect": {"program_id": "nys-hire-a-veteran-2020", "states": ["not_eligible"]},
+    "eval": "no_live_claim_cites_superseded_source"
+  },
+  {
+    "case": "expired_program",
+    "description": "Additional Restaurant Return-to-Work credit: only for tax years including 2022-12-31; company is not a restaurant",
+    "setup": {},
+    "expect": {"program_id": "nys-additional-restaurant-rtw", "states": ["not_eligible"], "or_skipped_by_plan": true},
+    "eval": "eligibility_requires_full_citations"
+  },
+  {
+    "case": "threshold_miss_5pct",
+    "description": "vet-okafor worked 988 hours, 5% under the 1,040-hour floor",
+    "setup": {},
+    "expect": {"program_id": "nys-hire-a-veteran", "subject_id": "vet-okafor", "states": ["not_eligible"]},
+    "eval": "eligibility_requires_full_citations"
+  },
+  {
+    "case": "happy_path",
+    "description": "vet-ramos: 2,010 hours, $84,000 wages -> 15% = $12,600 (cap $15,000)",
+    "setup": {},
+    "expect": {"program_id": "nys-hire-a-veteran", "subject_id": "vet-ramos", "states": ["unverified"], "agent_value": 12600},
+    "eval": "eligibility_requires_full_citations"
+  },
+  {
+    "case": "no_citable_criterion",
+    "description": "Program whose page has no quotable criterion (fixture page served by the app)",
+    "setup": {"extra_program": {"program_id": "fixture-uncitable", "name": "Fixture Program With No Criteria", "level": "company", "urls": ["{PUBLIC_BASE_URL}/fixtures/uncitable.html"]}},
+    "expect": {"program_id": "fixture-uncitable", "states": ["uncited"], "or_skipped_by_plan": true},
+    "eval": "eligibility_requires_full_citations"
+  },
+  {
+    "case": "cpa_hedges",
+    "description": "CPA says 'about twelve thousand six hundred, I think'",
+    "setup": {"tool_call": {"value": "12600", "confirmed": true, "cpa_statement": "about twelve thousand six hundred, I think"}},
+    "expect": {"states": ["needs-info"]},
+    "eval": "ready_requires_two_matching_values"
+  },
+  {
+    "case": "cpa_wrong_code",
+    "description": "CPA reads a code that doesn't match the claim",
+    "setup": {"tool_call": {"code": "000000", "value": "12600", "confirmed": true, "cpa_statement": "twelve thousand six hundred"}},
+    "expect": {"http_status": 403, "states": ["sent"]},
+    "eval": "ready_requires_two_matching_values"
+  },
+  {
+    "case": "cpa_mismatch",
+    "description": "CPA gives 9,000; outside tolerance",
+    "setup": {"tool_call": {"value": "9000", "confirmed": true, "cpa_statement": "nine thousand exactly"}},
+    "expect": {"states": ["rejected"], "superseding_claim": true},
+    "eval": "ready_requires_two_matching_values"
+  },
+  {
+    "case": "cpa_match",
+    "description": "CPA gives 12,600 and confirms",
+    "setup": {"tool_call": {"value": "12600", "confirmed": true, "cpa_statement": "twelve thousand six hundred dollars"}},
+    "expect": {"states": ["ready"]},
+    "eval": "ready_requires_two_matching_values"
+  }
+]

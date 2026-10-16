@@ -1,0 +1,109 @@
+"""Laptop-side deploy. Creates the parent sandbox once, then reattaches by ID.
+
+    python deploy.py              upload, (re)install if requirements changed, restart db + web
+    python deploy.py --netcheck   run netcheck.sh inside the parent
+    python deploy.py --smoke      run smoke.py inside the parent
+    python deploy.py --logs       tail web + db logs
+    python deploy.py --shell CMD  run one command in the parent's app dir
+"""
+import hashlib
+import os
+import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
+from daytona import CreateSandboxFromSnapshotParams, Daytona, FileUpload, SessionExecuteRequest
+
+load_dotenv()
+
+ROOT = Path(__file__).parent
+ID_FILE = ROOT / ".sandbox_id"
+SKIP_DIRS = {".git", "__pycache__", ".venv", "data"}
+SKIP_FILES = {"deploy.py", ".sandbox_id"}
+SURREAL_VERSION = "3.3.2"
+
+
+def files():
+    for p in ROOT.rglob("*"):
+        rel = p.relative_to(ROOT)
+        if p.is_file() and not SKIP_DIRS & set(rel.parts) and rel.name not in SKIP_FILES:
+            yield rel
+
+
+def sh(sb, cmd, timeout=60):
+    r = sb.process.exec(cmd, cwd=APP, timeout=timeout)
+    return r.exit_code, r.result
+
+
+def restart(sb, name, cmd):
+    try:
+        sb.process.delete_session(name)
+    except Exception:
+        pass  # session doesn't exist after a fresh create or a sandbox restart
+    sb.process.create_session(name)
+    sb.process.execute_session_command(name, SessionExecuteRequest(command=f"cd {APP} && {cmd}", run_async=True))
+
+
+d = Daytona()
+first = not ID_FILE.exists()
+if first:
+    sb = d.create(CreateSandboxFromSnapshotParams(
+        name="incentive-parent",
+        language="python",
+        public=True,           # preview link reachable without x-daytona-preview-token (ElevenLabs webhook)
+        auto_stop_interval=0,  # survive the demo
+        labels={"role": "parent", "app": "incentive-agent"},
+    ), timeout=180)
+    ID_FILE.write_text(sb.id)
+else:
+    sb = d.get(ID_FILE.read_text().strip())
+    if str(sb.state).lower().rsplit(".", 1)[-1] in ("stopped", "archived"):
+        sb.start()
+
+APP = f"{sb.get_work_dir().rstrip('/')}/app"
+
+if "--logs" in sys.argv:
+    print(sh(sb, "tail -n 80 web.log; echo ---- db; tail -n 20 db.log")[1])
+    sys.exit()
+if "--shell" in sys.argv:
+    print(sh(sb, sys.argv[sys.argv.index("--shell") + 1], timeout=300)[1])
+    sys.exit()
+
+rels = list(files())
+sb.process.exec("mkdir -p " + " ".join(sorted({f"{APP}/{r.parent}" for r in rels})))
+sb.fs.upload_files([FileUpload(source=(ROOT / r).read_bytes(), destination=f"{APP}/{r}") for r in rels])
+print(f"uploaded {len(rels)} files to {APP}")
+
+if "--netcheck" in sys.argv:
+    code, out = sh(sb, "bash netcheck.sh")
+    print(out)
+    sys.exit(code)
+
+req_hash = hashlib.sha256((ROOT / "requirements.txt").read_bytes()).hexdigest()
+_, remote_hash = sh(sb, "cat .req_hash 2>/dev/null")
+if remote_hash.strip() != req_hash:
+    code, out = sh(sb, f"pip install -q -r requirements.txt && echo {req_hash} > .req_hash", timeout=600)
+    print(out[-2000:])
+    if code:
+        sys.exit(f"pip install failed ({code})")
+
+code, _ = sh(sb, "test -x bin/surreal")
+if code:
+    code, out = sh(sb, f"curl -sSf https://install.surrealdb.com | sh -s -- --version {SURREAL_VERSION} {APP}/bin", timeout=300)
+    print(out[-1000:])
+
+if "--smoke" in sys.argv:
+    code, out = sh(sb, "python smoke.py", timeout=600)
+    print(out)
+    sys.exit(code)
+
+code, _ = sh(sb, "curl -sf http://127.0.0.1:8001/health")
+if code:
+    restart(sb, "db", "mkdir -p data && bin/surreal start --user root --pass root --bind 127.0.0.1:8001 surrealkv://data/db > db.log 2>&1")
+
+restart(sb, "web", "python app.py > web.log 2>&1")
+
+url = sb.get_preview_link(8000).url
+print(sb.id, url)
+if os.getenv("PUBLIC_BASE_URL", "").rstrip("/") != url.rstrip("/"):
+    print(f"set PUBLIC_BASE_URL={url} in .env and redeploy; paste {url}/api/cpa_tool into the ElevenLabs tool")

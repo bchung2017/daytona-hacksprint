@@ -1,0 +1,43 @@
+{
+  "company_id": "hudson-forge",
+  "name": "Hudson Forge Robotics LLC",
+  "entity_type": "LLC taxed as C corporation",
+  "naics": "333249",
+  "location": {
+    "city": "Brooklyn",
+    "state": "NY",
+    "zip": "11232"
+  },
+  "fiscal_year": {
+    "start": "2025-01-01",
+    "end": "2025-12-31"
+  },
+  "employees": 42,
+  "annual_payroll": 3650000,
+  "annual_revenue": 9800000,
+  "is_restaurant": false,
+  "subjects": [
+    {
+      "subject_id": "vet-ramos",
+      "kind": "employee",
+      "description": "Qualified veteran, machinist",
+      "hire_date": "2025-01-13",
+      "work_location_state": "NY",
+      "hours_first_12_months": 2010,
+      "wages_first_12_months": 84000,
+      "disabled_veteran": false,
+      "prior_180_day_affidavit_signed": true
+    },
+    {
+      "subject_id": "vet-okafor",
+      "kind": "employee",
+      "description": "Qualified veteran, assembly technician",
+      "hire_date": "2025-04-07",
+      "work_location_state": "NY",
+      "hours_first_12_months": 988,
+      "wages_first_12_months": 31200,
+      "disabled_veteran": false,
+      "prior_180_day_affidavit_signed": true
+    }
+  ]
+}

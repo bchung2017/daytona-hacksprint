@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Incentive Agent</title>
+<style>
+  :root { --bg:#0f1115; --panel:#171a21; --line:#262b36; --text:#e6e8ee; --dim:#8b93a7; --accent:#6aa8ff;
+          --ok:#3ecf8e; --warn:#f5b84b; --bad:#ff6b6b; --info:#9b8cff; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.45 ui-sans-serif, system-ui, sans-serif; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--line); }
+  h1 { font-size:16px; margin:0; } h2 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); margin:0 0 10px; }
+  main { display:grid; grid-template-columns: 280px minmax(260px, 1fr) minmax(380px, 1.4fr); gap:16px; padding:16px; height:calc(100vh - 56px); }
+  section { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; overflow:auto; }
+  button { background:var(--accent); color:#06101f; border:0; border-radius:6px; padding:7px 12px; font-weight:600; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  dl { margin:0; display:grid; grid-template-columns:auto 1fr; gap:4px 10px; } dt { color:var(--dim); } dd { margin:0; }
+  .subj { border-top:1px solid var(--line); margin-top:10px; padding-top:10px; }
+  .log div { padding:4px 0; border-bottom:1px solid var(--line); font-family:ui-monospace, monospace; font-size:12px; }
+  .log .step { color:var(--accent); margin-right:6px; }
+  .claim { border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:10px; }
+  .claim.superseded { opacity:.45; }
+  .row { display:flex; align-items:center; gap:8px; justify-content:space-between; }
+  .chip { font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--line); }
+  .chip.ready,.chip.approved,.chip.confirmed { background:var(--ok); color:#04170e; }
+  .chip.sent,.chip.unverified { background:var(--info); color:#0d0820; }
+  .chip.needs-info { background:var(--warn); color:#1f1402; }
+  .chip.rejected,.chip.compute_error,.chip.uncited { background:var(--bad); color:#200606; }
+  .chip.not_eligible { background:#3a4050; }
+  .vals { display:flex; gap:16px; margin:6px 0; font-variant-numeric: tabular-nums; }
+  .vals b { font-size:16px; } .dim { color:var(--dim); font-size:12px; }
+  details { margin-top:6px; } summary { cursor:pointer; color:var(--dim); font-size:12px; }
+  blockquote { margin:6px 0; padding:4px 10px; border-left:3px solid var(--ok); color:#cfd5e3; font-size:12px; }
+  blockquote.miss { border-color:var(--bad); }
+  @media (max-width: 900px) { main { grid-template-columns:1fr; height:auto; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Incentive Agent</h1>
+  <button id="run">Run agent</button>
+</header>
+<main>
+  <section>
+    <h2>Company</h2>
+    <dl>
+      <dt>Name</dt><dd>{{ company.name }}</dd>
+      <dt>NAICS</dt><dd>{{ company.naics }}</dd>
+      <dt>Location</dt><dd>{{ company.location.city }}, {{ company.location.state }}</dd>
+      <dt>Employees</dt><dd>{{ company.employees }}</dd>
+      <dt>Payroll</dt><dd>${{ "{:,}".format(company.annual_payroll) }}</dd>
+      <dt>Revenue</dt><dd>${{ "{:,}".format(company.annual_revenue) }}</dd>
+      <dt>FY</dt><dd>{{ company.fiscal_year.start }} to {{ company.fiscal_year.end }}</dd>
+    </dl>
+    {% for s in company.subjects %}
+    <div class="subj">
+      <div><b>{{ s.subject_id }}</b> <span class="dim">{{ s.description }}</span></div>
+      <dl>
+        <dt>Hired</dt><dd>{{ s.hire_date }}</dd>
+        <dt>Hours (12 mo)</dt><dd>{{ "{:,}".format(s.hours_first_12_months) }}</dd>
+        <dt>Wages (12 mo)</dt><dd>${{ "{:,}".format(s.wages_first_12_months) }}</dd>
+      </dl>
+    </div>
+    {% endfor %}
+    <h2 style="margin-top:16px">Candidate programs</h2>
+    {% for p in programs %}<div class="dim">{{ p.name }}</div>{% endfor %}
+  </section>
+  <section>
+    <h2>Run log</h2>
+    <div class="log" id="log"></div>
+  </section>
+  <section>
+    <h2>Claims</h2>
+    <div id="claims"></div>
+  </section>
+</main>
+<script>
+const claims = new Map();
+const money = v => v == null ? "—" : "$" + Number(v).toLocaleString(undefined, {maximumFractionDigits: 2});
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function render() {
+  const list = [...claims.values()].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+  document.getElementById("claims").innerHTML = list.map(c => `
+    <div class="claim ${c.superseded_by ? "superseded" : ""}">
+      <div class="row"><div><b>${esc(c.program_id)}</b> <span class="dim">${esc((c.agent_inputs || {}).subject_id || c.company_id)}</span></div>
+        <span class="chip ${esc(c.state)}">${esc(c.state)}</span></div>
+      <div class="vals"><div><div class="dim">Agent</div><b>${money(c.agent_value)}</b></div>
+        <div><div class="dim">CPA</div><b>${money(c.cpa_value)}</b></div></div>
+      ${c.formula ? `<div class="dim">${esc(c.formula)}</div>` : ""}
+      ${c.reason ? `<div class="dim">${esc(c.reason)}</div>` : ""}
+      ${c.superseded_by ? `<div class="dim">superseded by ${esc(c.superseded_by)}</div>` : ""}
+      <details><summary>${(c.citations || []).length} citations</summary>
+        ${(c.citations || []).map(x => `<blockquote class="${x.cited ? "" : "miss"}"><b>${esc(x.criterion)}</b>: ${esc(x.value)}<br>“${esc(x.quote)}”<br><a href="${esc(x.source_url)}" target="_blank" class="dim">${esc(x.source_url)}</a></blockquote>`).join("")}
+      </details>
+      <div class="row" style="justify-content:flex-end; margin-top:8px">
+        ${c.state === "unverified" && !c.superseded_by ? `<button class="ghost" onclick="send('${c.id}')">Send to CPA</button>` : ""}
+        ${c.state === "sent" ? `<a href="/cpa?claim=${encodeURIComponent(c.id)}" target="_blank"><button class="ghost">Open CPA page</button></a>` : ""}
+        ${c.state === "ready" ? `<button onclick="approve('${c.id}')">Approve</button>` : ""}
+      </div>
+    </div>`).join("") || `<div class="dim">No claims yet.</div>`;
+}
+
+async function loadClaims() { (await (await fetch("/api/claims")).json()).forEach(c => claims.set(c.id, c)); render(); }
+async function loadLog() {
+  const rows = await (await fetch("/api/log")).json();
+  document.getElementById("log").innerHTML = rows.map(r => `<div><span class="step">${esc(r.step)}</span>${esc(r.msg)}</div>`).join("");
+}
+async function send(id) {
+  const r = await fetch(`/api/claims/${encodeURIComponent(id)}/send`, {method: "POST"});
+  if (r.ok) window.open((await r.json()).cpa_url || `/cpa?claim=${encodeURIComponent(id)}`, "_blank");
+  loadClaims();
+}
+async function approve(id) {
+  const r = await fetch(`/api/claims/${encodeURIComponent(id)}/approve`, {method: "POST"});
+  if (!r.ok) alert(await r.text());
+  loadClaims();
+}
+document.getElementById("run").onclick = () => fetch("/api/run", {method: "POST"});
+new EventSource("/api/stream").onmessage = e => { const c = JSON.parse(e.data); if (c.id) { claims.set(c.id, c); render(); } };
+loadClaims(); loadLog(); setInterval(loadLog, 2000);
+</script>
+</body>
+</html>
