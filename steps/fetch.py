@@ -81,8 +81,10 @@ def fetch_and_cite(program, criteria):
     src_by_url = {s["url"]: s for s in sources}
     out = []
     for f in ex.findings:
+        if not f.quote.strip():
+            continue  # the source doesn't address this planner criterion; nothing to cite, nothing to compute from
         text = texts.get(f.source_url, "")
-        cited = bool(f.quote.strip()) and _norm(f.quote) in _norm(text)
+        cited = _norm(f.quote) in _norm(text)
         out.append({**f.model_dump(), "cited": cited, "fetched_at": fetched_at,
                     "source_id": src_by_url.get(f.source_url, {}).get("id")})
     status_cited = bool(ex.status_quote.strip()) and _norm(ex.status_quote) in _norm(texts.get(ex.status_source_url, ""))

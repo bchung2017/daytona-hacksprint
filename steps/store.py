@@ -1,6 +1,7 @@
 """SurrealDB claims store. The ready/approved gate is enforced in the schema, not in Python:
 a claim cannot enter `ready` or `approved` unless fn::matches() holds on the record itself."""
 import hashlib
+import re
 import os
 import secrets
 import threading
@@ -88,8 +89,13 @@ def log(run_id, step, msg, **data):
 
 # ---- sources: a page whose content changed supersedes, never overwrites ----
 
+def _content_key(text):
+    # Version on visible content: markup attributes (e.g. an injected id="table-1") churn between renders.
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", text)).strip()
+
+
 def upsert_source(program_id, url, text, fetched_at):
-    h = hashlib.sha256(text.encode()).hexdigest()
+    h = hashlib.sha256(_content_key(text).encode()).hexdigest()
     with span("store.upsert_source", kind="CHAIN", program_id=program_id, url=url, content_hash=h):
         existing = q("SELECT * FROM source WHERE url = $u AND content_hash = $h", u=url, h=h)
         if existing:
