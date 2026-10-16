@@ -89,6 +89,12 @@
   @keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(110,31,43,.35); } 50% { box-shadow:0 0 0 10px rgba(110,31,43,0); } }
   .stage .l { font-size:12px; font-weight:600; margin-top:8px; color:var(--dim); line-height:1.3; }
   .stage.now .l { color:var(--maroon); } .stage.done .l { color:var(--ink); }
+  .stage .vend { display:flex; flex-wrap:wrap; justify-content:center; gap:4px; margin-top:7px; }
+  .badge { display:inline-flex; align-items:center; gap:5px; padding:2px 8px 2px 4px; border-radius:999px; background:var(--white); border:1px solid var(--line); font-size:10.5px; font-weight:700; color:var(--ink); white-space:nowrap; }
+  .badge svg, .badge img { width:14px; height:14px; display:block; border-radius:3px; }
+  .trace { display:flex; align-items:center; gap:10px; margin:6px 18px 12px; }
+  .trace::before, .trace::after { content:""; flex:1; height:2px; background:repeating-linear-gradient(90deg, var(--tan) 0 6px, transparent 6px 11px); }
+  .trace .t { font-size:11px; font-weight:600; color:var(--dim); }
   .replay { margin-left:auto; background:var(--white); color:var(--brown-deep); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font:inherit; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; }
   .replay:hover { border-color:var(--brown); } .replay .paw { width:14px; height:14px; } .replay:disabled { opacity:.5; cursor:default; }
   .feed { padding:6px 18px 18px; max-height:440px; overflow:auto; }
@@ -379,6 +385,7 @@
           <span id="runLabel">Replay</span>
         </button></div>
       <div class="stages" id="stages"></div>
+      <div class="trace" id="trace"></div>
       <div class="feed" id="feed"><div class="idle">Opening this tab starts the run.</div></div>
     </div>
     <details class="tech">
@@ -537,13 +544,23 @@ function playScript() {
 
 /* ---------- Tab 2: stages + narrative ---------- */
 const STAGES = [
-  ["intake", "Opening the file", I.file], ["plan", "Choosing credits to check", I.search], ["fetch", "Reading the official rules", I.book],
-  ["compute", "Doing the math in a sealed room", I.lock], ["cpa", "On the phone with the CPA", I.phone], ["approve", "Ready for your sign-off", I.check],
+  ["intake", "Opening the file", I.file, ["daytona"]], ["plan", "Choosing credits to check", I.search, ["anthropic"]], ["fetch", "Reading the official rules", I.book, ["anchor"]],
+  ["compute", "Doing the math in a sealed room", I.lock, ["daytona", "anthropic", "surreal"]], ["cpa", "On the phone with the CPA", I.phone, ["elevenlabs"]], ["approve", "Ready for your sign-off", I.check, []],
 ];
+const LOGOS = {
+  daytona:    ["Daytona",    `<svg viewBox="0 0 275 287" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14.5584 193.736H114.275V227.925H14.5584V193.736Z"/><path d="M148.464 74.076H262.426V108.265H148.464V74.076Z"/><path d="M88.6338 84.6127L173.246 0L197.422 24.175L112.809 108.788L88.6338 84.6127Z"/><path d="M89.157 170.084L24.175 105.102L0 129.277L64.9819 194.259L89.157 170.084Z"/><path d="M174.629 217.911L106.133 286.407L81.9577 262.232L150.454 193.736L174.629 217.911Z"/><path d="M174.106 132.44L250.66 208.994L274.835 184.819L198.281 108.265L174.106 132.44Z"/><path d="M88.6338 48.434V131.057H54.4451L54.4451 48.434H88.6338Z"/><path d="M208.294 168.094V270.66H174.106V168.094H208.294Z"/></svg>`],
+  anthropic:  ["Anthropic",  `<svg fill="#191919" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z"/></svg>`],
+  anchor:     ["Anchor",     `<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAE1UlEQVR42u2aPUgzTRDHZ/cOeQhKREgTMJgUWoldGi0kiGgnNkKaaEBJY2FhZWkTCy21UGKhNtEi9lopYooo2GghSsAvtFGJxCR393+qPfx6n+TucscbvIGtbu929rdzM7Ozy4gI9IuF0y8XF4ALwAXgAnABuABcAC6AXyuyk4NJkkTAvzNvxhipquqYTsypvQBjrOrkzfRtCAvgnJOmaTQ2NkaTk5P6JBljREQEQG+rq6uUTqf1d5wQ2Nk452CMIRAI4P39HdWkWCwiEAiAMQbOOezWz3YAkiSBiLC1tQUAKJVKUBTlx1YqlQAAm5ubn95tWABiAr29vdA0DYqiVLUARVGgaRp6e3udgmAvAM45stmsPrlaAABANpsF57xxAQjFJyYmap78Vwjj4+NOWEH9P8oYA2MMbW1tuL29haZpUFW1ZgCqqkLTNNze3qK1tVV3pA0DQJZlEBFmZmYAAJVKBUZFvLOwsGC3Fdhn/gMDAzU7v68irKZYLKKrq8vOsGivD9je3jbsA776gt3dXTutwN4EKBQK4e3tTf+vzUIYHBy0C4L9ecD8/LxlKzg7O0NTU5MdDtE+AOK/bWlpQT6fNxwNvkKYnp7+5GQbKhWORqOmrUBVVaiqiqenJ/h8PnDO6+kQbc+1IUkSGGM4ODgwDUGExeXl5Xr7AmcAEBHC4TBUVbUUFsvlMnp6euoJgeAkhFQqZdkh7u/vNx4A4b39fj+en58th8XR0dF6QXAGwEfvPTs7a8khapqGy8tLeDyeeoRF5wCIsPjnzx9cXFzoEzJrBXNzc/WwAvOTkSTJcBPJzMjICBRFMQVAOMTX11e0t7db3Sc4ZwFf2/n5ueXkaGNjw5IVGC6Li5K1x+OhcDisV3aNVoi7u7tpcXGRZFkmTdOIc+NnNKqqEuec+vr66OjoiCRJMnWmYKrMtbe3B6vy8vKC5+dn3azNWsHx8bGV8pnxWB6LxQAA5XJZT1NrbZVKBZVKBff39+jo6EAwGMTj46P+3CyEWCxm9lcw5sG9Xi9ubm4sK5xIJPRvJxIJy2Hx5uYGXq/XTFg0tvrJZNJyJndycgJZlvXIIMsyTk9PLe8TksmkGSuoPYvr7OxEsVi0nMVFIhFdUaFsJBIxDeBj+ayzs9NoWKwNABEhk8lYXv2dnZ1vq1TP8lkmk/mks2UAQrnh4WHLK/T29oZQKPRthepdPhsaGqr5V+C1xH0iou7ubv0k16iIOL+0tERXV1ffTn7F86urK1paWjJ9Mix06+np+aS7pTxArI7P58PDw4PpQ458Po/m5ub/9NJWy2ciKt3f38Pn8+mHM3XxAcKUpqamTB9zRaPRqmZppXwm+k5NTRmNBMY2PrlczvBB5+Hhof4NO8pnok8ul9P1NJALGMsD+vv7DSmmqirC4XDNq2KmfCb69Pf325MHfFUunU7XfNkhlUoZVkr0XV9fr3mcdDptbyr80SEGg0F94H9JoVCA3+83XMYW/f1+PwqFQtVxyuUygsGgqbqAbCacXV9fUzwep3g8TgB+vPBERLSyskJ3d3eGw5oY5+7ujmKxGCUSCX2Mn8ZZW1uj6+trU+HT1DU5p668OTGO6XuCTl16lCSpagJmZRzHLkq6d4VdAC4AF4ALwAXgAnABuABcAP8v+QsP2LTXqvGrugAAAABJRU5ErkJggg==" alt="">`],
+  surreal:    ["SurrealDB",  `<svg fill="#FF00A0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m12 6.314 5.714 3.165v-1.27L12 5.054c-.85.47-4.957 2.74-5.714 3.157.703.39 8.085 4.467 12.572 6.946v1.264L12 20.209c-1.71-.943-5.15-2.844-6.858-3.79v-3.788L12 16.42l1.144-.632-9.146-5.05v6.316L12 21.472l8-4.42v-2.526L8.57 8.21Zm-8.002.632v2.528l11.428 6.316-3.428 1.896-5.714-3.165v1.27l5.714 3.156c.85-.47 4.957-2.74 5.714-3.157-.703-.39-8.083-4.467-12.57-6.948V7.578L12 3.789c1.707.945 5.148 2.846 6.858 3.789v3.789L12 7.577l-1.144.633L20 13.263V6.946L12 2.526c-.791.438-7.416 4.1-8.002 4.42zM12 0 1.713 5.685v12.63L12 24l10.287-5.682V5.685Zm9.14 17.683L12 22.736l-9.143-5.053V6.317L12 1.264l9.143 5.053z"/></svg>`],
+  elevenlabs: ["ElevenLabs", `<svg fill="#000000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4.6035 0v24h4.9317V0zm9.8613 0v24h4.9317V0z"/></svg>`],
+  arize:      ["Arize",      `<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAChklEQVR42sWXPWgUURSFvx3cLVNZuK2kM4sIghCUgfBAXGwkTaZKkULRLARxC5eYIpsfcC0CWggaxSLMNkIqizAEphGs0y5a7oImxYIWprE5gWF4L44v2fWW783PnXPv+e6b0u2lu/zPuOBzU5yEFWAOuAN8B95EJj3weVbgmfgj4K2SaAA7cRLWxpJAnIQzQBMoZ5ZrQCtOwomRJhAn4SWgDVQt27PAwsgSUN0XgWnHJWWgGSfhjVEpUFe9T4sqsCalzi+BOAkvA6tAkRobKXU+CUj6JTVa0WioWc9FgTnggWX9GOgBfcveBNAuUorgL19fA57lLHfy8tfALeAeYIPQtKxZ8UpAnm4Bk5btFNiITDqITPoFWAGGluvmpaCXAgvydj76wHJk0sHJQmTSXeCloxRP1MTFE5CXmw7pO/rqfLwCEst6DVh3lSJw0G7NQbuPwLbtQVJk09GUs5ofhRRYlJfz0VPdhy45I5PuAx0plafkQxslA8ugsdFuCLQLjtxtKZWPSVFywppAZtDYaPcB6BYBixTakmL5CPMDK8jQruUYNAfAVmTS30UxqCZtO0rRzFIyyAyaeYf0K5FJv3qcNbqOUlSzlCwdTXVqwI6D9euRSZd9z3vy/67r2cBqIOltFyTytndIORclG0A9kPw22m1maXeG+KQmtlFyJgB+WjY78vSZQ827AXy2UHUYCBz9zGLXRbszJDHQVO3lBtq70tFUpwJckwW/Afun0S5j2zpwHTgEkiKQ0ng3umcvMumg9K9/Rnr5Cx1SyhlM3/cpm8+PyU0xo5zD7NOR/xcorjpwfQW4OI4EDh3rP4Bf40hgz2Gp9z7cCDwt9VikPJaFn/ta9w938da1vHRmWwAAAABJRU5ErkJggg==" alt="">`],
+};
+const badge = k => `<span class="badge">${LOGOS[k][1]}${LOGOS[k][0]}</span>`;
 let stageIdx = -1, running = false;
 function renderStages() {
-  document.getElementById("stages").innerHTML = STAGES.map(([k, l, ic], i) =>
-    `<div class="stage ${i < stageIdx ? "done" : i === stageIdx && running ? "now" : i === stageIdx ? "done" : ""}"><div class="dot">${ic}</div><div class="l">${l}</div></div>`).join("");
+  document.getElementById("stages").innerHTML = STAGES.map(([k, l, ic, v], i) =>
+    `<div class="stage ${i < stageIdx ? "done" : i === stageIdx && running ? "now" : i === stageIdx ? "done" : ""}"><div class="dot">${ic}</div><div class="l">${l}</div><div class="vend">${v.map(badge).join("")}</div></div>`).join("");
+  document.getElementById("trace").innerHTML = `${badge("arize")}<span class="t">traces every step</span>`;
   const title = document.getElementById("winTitle");
   title.innerHTML = running && stageIdx >= 0 ? `${STAGES[stageIdx][1]}<span class="typing"><i></i><i></i><i></i></span>` : stageIdx >= 0 ? "Finished. Nothing moves without a human." : "TaxBeagle is resting";
 }
