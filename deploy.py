@@ -12,15 +12,31 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from daytona import CreateSandboxFromSnapshotParams, Daytona, FileUpload, SessionExecuteRequest
-
-load_dotenv()
+from daytona import CreateSandboxFromSnapshotParams, Daytona, DaytonaNotFoundError, FileUpload, SessionExecuteRequest
 
 ROOT = Path(__file__).parent
-ID_FILE = ROOT / ".sandbox_id"
+NAME = "incentive-parent"  # reattach by name, so a fresh container (cloud session) finds the same parent
 SKIP_DIRS = {".git", "__pycache__", ".venv", "data"}
-SKIP_FILES = {"deploy.py", ".sandbox_id"}
+SKIP_FILES = {"deploy.py"}
 SURREAL_VERSION = "3.3.2"
+
+
+def ensure_env_file():
+    """No .env (e.g. a fresh cloud session): build it from process env, using .env.example's names and defaults."""
+    env = ROOT / ".env"
+    if env.exists():
+        return
+    lines = []
+    for line in (ROOT / ".env.example").read_text().splitlines():
+        key, sep, default = line.partition("=")
+        if sep and not key.startswith("#"):
+            lines.append(f"{key}={os.environ.get(key, default)}")
+    env.write_text("\n".join(lines) + "\n")
+    print("wrote .env from environment variables")
+
+
+ensure_env_file()
+load_dotenv(ROOT / ".env")
 
 
 def files():
@@ -45,20 +61,18 @@ def restart(sb, name, cmd):
 
 
 d = Daytona()
-first = not ID_FILE.exists()
-if first:
+try:
+    sb = d.get(NAME)
+    if str(sb.state).lower().rsplit(".", 1)[-1] in ("stopped", "archived"):
+        sb.start()
+except DaytonaNotFoundError:
     sb = d.create(CreateSandboxFromSnapshotParams(
-        name="incentive-parent",
+        name=NAME,
         language="python",
         public=True,           # preview link reachable without x-daytona-preview-token (ElevenLabs webhook)
         auto_stop_interval=0,  # survive the demo
         labels={"role": "parent", "app": "incentive-agent"},
     ), timeout=180)
-    ID_FILE.write_text(sb.id)
-else:
-    sb = d.get(ID_FILE.read_text().strip())
-    if str(sb.state).lower().rsplit(".", 1)[-1] in ("stopped", "archived"):
-        sb.start()
 
 APP = f"{sb.get_work_dir().rstrip('/')}/app"
 
@@ -69,9 +83,20 @@ if "--shell" in sys.argv:
     print(sh(sb, sys.argv[sys.argv.index("--shell") + 1], timeout=300)[1])
     sys.exit()
 
+url = sb.get_preview_link(8000).url.rstrip("/")
+
+
+def content(rel):
+    data = (ROOT / rel).read_bytes()
+    if str(rel) != ".env":
+        return data
+    lines = [l for l in data.decode().splitlines() if not l.startswith("PUBLIC_BASE_URL=")]
+    return ("\n".join(lines + [f"PUBLIC_BASE_URL={url}"]) + "\n").encode()
+
+
 rels = list(files())
 sb.process.exec("mkdir -p " + " ".join(sorted({f"{APP}/{r.parent}" for r in rels})))
-sb.fs.upload_files([FileUpload(source=(ROOT / r).read_bytes(), destination=f"{APP}/{r}") for r in rels])
+sb.fs.upload_files([FileUpload(source=content(r), destination=f"{APP}/{r}") for r in rels])
 print(f"uploaded {len(rels)} files to {APP}")
 
 if "--netcheck" in sys.argv:
@@ -103,7 +128,5 @@ if code:
 
 restart(sb, "web", "python app.py > web.log 2>&1")
 
-url = sb.get_preview_link(8000).url
 print(sb.id, url)
-if os.getenv("PUBLIC_BASE_URL", "").rstrip("/") != url.rstrip("/"):
-    print(f"set PUBLIC_BASE_URL={url} in .env and redeploy; paste {url}/api/cpa_tool into the ElevenLabs tool")
+print(f"ElevenLabs tool URL: {url}/api/cpa_tool   post-call webhook: {url}/api/elevenlabs/postcall")

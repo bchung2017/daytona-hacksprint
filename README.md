@@ -17,12 +17,14 @@ inbound:  CPA browser → /cpa (ElevenLabs widget); ElevenLabs → /api/cpa_tool
 ## Runbook
 
 ```bash
-cp .env.example .env                        # fill keys; generate CPA_TOOL_SECRET: python -c "import secrets;print(secrets.token_urlsafe(24))"
-pip install daytona==0.224.1 python-dotenv  # laptop only needs these
-bash netcheck.sh                            # step 0, from the laptop / Claude Code sandbox
-python deploy.py --netcheck                 # first run creates the parent; then step 0 from inside it
+# Keys: either a local .env (cp .env.example .env), or, for cloud-only dev, environment variables in the
+# Claude Code cloud environment settings. deploy.py writes .env from them when no .env exists.
+# CPA_TOOL_SECRET: python -c "import secrets;print(secrets.token_urlsafe(24))"
+pip install daytona==0.224.1 python-dotenv  # the deploy host only needs these
+bash netcheck.sh                            # step 0, from wherever deploy.py runs
+python deploy.py --netcheck                 # creates (or reattaches by name to) the parent; step 0 from inside it
 python deploy.py                            # installs deps + surreal, starts db and web, prints preview URL
-#   put the URL in .env as PUBLIC_BASE_URL, configure ElevenLabs per ELEVENLABS.md, then:
+#   PUBLIC_BASE_URL is injected into the parent's .env automatically. Configure ElevenLabs per ELEVENLABS.md.
 python deploy.py                            # redeploy (~10s; pip only reruns when requirements.txt changes)
 python deploy.py --smoke                    # all setup smoke tests, one line each
 python deploy.py --shell "python -m evals.run"             # voice + invariant evals (no LLM spend)
