@@ -19,10 +19,17 @@
   dl { display:grid; grid-template-columns:auto 1fr; gap:8px 14px; margin:0; } dt { color:var(--dim); } dd { margin:0; font-weight:600; }
   .note { margin-top:18px; padding:12px 14px; background:var(--tan-soft); border-radius:10px; font-size:13px; color:var(--brown-deep); }
   h2 { font:800 22px Fraunces, serif; margin:0 0 6px; }
+  .pov { background:var(--brown-deep); color:#fff; font-size:13px; font-weight:600; padding:9px 14px; border-radius:10px; margin-bottom:14px; text-align:center; }
+  .ws { margin-top:16px; border:1.5px dashed var(--tan); border-radius:12px; padding:14px 16px; background:var(--cream); }
+  .ws .t { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--brown); margin-bottom:8px; }
+  .ws .row { display:flex; justify-content:space-between; font-size:14px; padding:4px 0; border-bottom:1px solid var(--line); }
+  .ws .est { display:flex; justify-content:space-between; align-items:baseline; margin-top:10px; padding-top:10px; border-top:2px solid var(--brown); }
+  .ws .est b { font:800 32px Fraunces, serif; color:var(--brown-deep); }
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="pov">You're seeing this as the CPA. TaxBeagle's own figure is not on this page.</div>
   <div class="brand">
     <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><path d="M14 30 L8 10 L26 20 Z" fill="#8a5a33"/><path d="M50 30 L56 10 L38 20 Z" fill="#8a5a33"/><ellipse cx="32" cy="34" rx="21" ry="19" fill="#8a5a33"/><path d="M32 15 C27 20 25 28 25 36 C25 44 28 50 32 53 C36 50 39 44 39 36 C39 28 37 20 32 15 Z" fill="#fff"/><ellipse cx="32" cy="43" rx="10" ry="8" fill="#fff"/><circle cx="24" cy="33" r="2.6" fill="#2a1a14"/><circle cx="40" cy="33" r="2.6" fill="#2a1a14"/><path d="M28.5 41 Q32 38.5 35.5 41 Q32 45 28.5 41 Z" fill="#2a1a14"/><path d="M13 50 Q32 44 51 50 L48 58 Q32 54 16 58 Z" fill="#6e1f2b"/></svg>
     <div><h1>TaxBeagle</h1><div class="tag">Independent CPA verification</div></div>
@@ -42,7 +49,19 @@
       <dt>Hours</dt><dd>{{ "{:,}".format(subject.hours_first_12_months) }} in the first 12 months</dd>
       <dt>Wages</dt><dd>${{ "{:,}".format(subject.wages_first_12_months) }} in the first 12 months</dd>
     </dl>
-    <div class="note">Work out the credit on your own. The agent will not tell you its figure, and it only counts your number if you state it plainly and confirm it on read-back.</div>
+    {% set ft = subject.hours_first_12_months >= 1820 %}
+    {% set rate = 0.20 if subject.disabled_veteran else 0.15 %}
+    {% set cap = (20000 if subject.disabled_veteran else 15000) * (1 if ft else 0.5) %}
+    {% set est = [subject.wages_first_12_months * rate, cap] | min %}
+    <div class="ws">
+      <div class="t">Your worksheet, worked out independently</div>
+      <div class="row"><span>Position</span><span>{{ "Full-time, 1,820 h or more" if ft else "Part-time, under 1,820 h" }}</span></div>
+      <div class="row"><span>Rate</span><span>{{ (rate * 100) | int }}% of first-year wages</span></div>
+      <div class="row"><span>${{ "{:,}".format(subject.wages_first_12_months) }} × {{ (rate * 100) | int }}%</span><span>${{ "{:,.0f}".format(subject.wages_first_12_months * rate) }}</span></div>
+      <div class="row"><span>Cap</span><span>${{ "{:,.0f}".format(cap) }}</span></div>
+      <div class="est"><span>Your estimate</span><b>${{ "{:,.0f}".format(est) }}</b></div>
+    </div>
+    <div class="note">Read your estimate to the agent and confirm it on read-back. The agent will not tell you its figure, and it only counts your number if you state it plainly and confirm it on read-back.</div>
   </div>
   {% if agent_id %}
   <elevenlabs-convai agent-id="{{ agent_id }}" dynamic-variables='{{ dynamic_variables }}'></elevenlabs-convai>

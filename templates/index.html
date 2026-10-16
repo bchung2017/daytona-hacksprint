@@ -66,7 +66,11 @@
   .badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; background:var(--maroon-soft); color:var(--maroon-deep); }
   .badge.brown { background:var(--tan-soft); color:var(--brown-deep); }
   dl { margin:12px 0 0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:14px; } dt { color:var(--dim); } dd { margin:0; font-weight:600; }
-  .programs li { padding:10px 0; border-bottom:1px solid var(--line); } .programs li:last-child { border:0; }
+  .prog { display:flex; flex-direction:column; gap:10px; } .prog.old { opacity:.6; }
+  .worth { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .worth .upto { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--brown); }
+  .worth b { font:800 36px Fraunces, serif; color:var(--maroon-deep); line-height:1; } .worth .per { font-size:13px; color:var(--dim); }
+  .here { background:var(--ok-soft); color:var(--ok); border-radius:10px; padding:8px 12px; font-size:13px; font-weight:600; } .prog.old .here { background:var(--tan-soft); color:var(--brown-deep); }
 
   /* ---- Tab 2 ---- */
   .window { background:var(--white); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; }
@@ -336,14 +340,31 @@
     </div>
 
     <div style="margin-top:28px" class="eyebrow">On the list</div>
-    <h2 style="margin:4px 0 14px">Credits we'll look into</h2>
-    <div class="card">
-      <ul class="programs" style="list-style:none; margin:0; padding:0">
-        {% for p in programs %}
-        <li><b>{{ p.name }}</b>{% if p.superseded_by %} <span class="badge brown">older version</span>{% endif %}
-          <div class="small dim">Official sources: {% for u in p.urls %}<a href="{{ u }}" target="_blank" rel="noopener">{{ u.split('/')[-1] }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</div></li>
-        {% endfor %}
-      </ul>
+    <h2 style="margin:4px 0 14px">Credits we'll look into, and what they're worth</h2>
+    <div class="grid g3">
+      {% for p in programs %}
+      {% set pid = p.program_id %}
+      <div class="card prog {% if p.superseded_by %}old{% endif %}">
+        <div class="eyebrow">{{ p.jurisdiction }} · {{ "per employee" if p.level == "subject" else "company-wide" }}</div>
+        <h3 style="margin-top:4px">{{ p.name }}</h3>
+        {% if pid == "nys-hire-a-veteran" %}
+        <div class="worth"><span class="upto">up to</span><b class="num">$15,000</b><span class="per">off the tax bill, per veteran hired</span></div>
+        <p class="small" style="margin:0">15% of a qualified veteran's first-year wages, 20% for a disabled veteran. A dollar-for-dollar credit, not a deduction.</p>
+        <div class="here">For Hudson Forge: two veterans hired in 2025, so <b>up to $30,000</b> on the table</div>
+        {% elif pid == "nys-hire-a-veteran-2020" %}
+        <div class="worth"><span class="upto">was</span><b class="num">$5,000</b><span class="per">per veteran, under the old rules</span></div>
+        <p class="small" style="margin:0">The older, smaller version of the same credit. We check it so the claim cites today's rules, not stale ones.</p>
+        <div class="here">Replaced by the current version above</div>
+        {% elif pid == "nys-additional-restaurant-rtw" %}
+        <div class="worth"><span class="upto">up to</span><b class="num">$50,000</b><span class="per">off the tax bill, per business</span></div>
+        <p class="small" style="margin:0">$5,000 for each net new restaurant job added after the pandemic.</p>
+        <div class="here">Hudson Forge isn't a restaurant, and the window has closed</div>
+        {% else %}
+        <p class="small" style="margin:0">We only state a figure once it's quoted from the official source.</p>
+        {% endif %}
+        <div class="small dim" style="margin-top:auto">Official sources: {% for u in p.urls %}<a href="{{ u }}" target="_blank" rel="noopener">{{ u.split('/')[-1] }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</div>
+      </div>
+      {% endfor %}
     </div>
   </section>
 
