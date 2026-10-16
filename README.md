@@ -5,19 +5,24 @@ VIDEO: https://www.loom.com/share/231298a3e0104b649b7e4d4d06045537?utm_medium=gi
 GITHUB: https://github.com/bchung2017/daytona-hacksprint
 
 Inspiration
+
 Small businesses leave real money on the table every year because tax credits are buried in dense state PDFs, each one has its own math, and nobody trusts an AI to file a number. Hudson Forge, our seed company, has hired veterans since 2019 and never claimed the NY Hire a Veteran Credit. That's $12,600 a year, gone. We wanted an agent that could find it, prove it, and still never be the one who signs.
 
 What it does
+
 TaxBeagle sniffs out tax credits for a company, cites every eligibility fact word for word from the official government source, computes the credit in a sealed sandbox, calls a human CPA over voice to get an independent figure, and only unlocks approval when the two numbers match. A human clicks the final button. The agent never sees the CPA's worksheet, and the CPA never sees the agent's number.
 
 How we built it
+
 Daytona: a persistent parent sandbox runs the app. Every credit computation spawns an ephemeral child sandbox with no network, no keys, and nothing but the quoted facts and the employee's inputs. Run, read the number, destroy.
 Anchor: fetches the real tax.ny.gov pages through a cloud browser. A citation only counts if the quote is a literal substring of the fetched text. No paraphrase, no memory.
 SurrealDB: holds claims, sources, and the gate itself. A schema assertion makes it impossible for a claim to become ready or approved unless the CPA's figure matches ours within tolerance. Python can't override it. Live queries push every state change to the board.
 ElevenLabs: the voice agent calls the CPA, verifies a one-time code, and records the CPA's figure only if they state it plainly and confirm on read-back. The post-call webhook delivers the transcript, which we cross-check against the tool call.
 Claude: plans which credits to check, extracts quoted facts, and writes the per-credit program.
 Arize: traces the whole pipeline and the evals.
+
 Challenges we ran into
+
 The planner invented a criterion the source never mentions, and the citation gate blocked the whole claim. Fix: an empty quote means "the source doesn't address this," not "fabricated."
 Anchor's rendered HTML had an attribute that changed between fetches, so every run "superseded" the previous source version. We version on tag-stripped visible text now.
 Daytona sandboxes created before our tier upgrade kept a restricted egress policy. We had to recreate the parent.
@@ -39,7 +44,7 @@ inbound:  CPA browser → /cpa (ElevenLabs widget); ElevenLabs → /api/cpa_tool
 
 # Post-hacksprint notes
 
-Written after the Daytona HackSprint NYC demo on 2026-10-16. One thing didn't make it onto the screen:
+Written after the hacksprint. One thing didn't make it onto the project:
 
 <img width="1595" height="642" alt="image" src="https://github.com/user-attachments/assets/e0e85589-da7f-4c04-b66f-b01b6ec21847" />
 
