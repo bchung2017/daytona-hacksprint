@@ -156,7 +156,31 @@
   .steps li.done { color:var(--ok); border-color:var(--ok-soft); } .steps li.done i { background:var(--ok); color:#fff; }
   .steps li.next { color:var(--maroon); border-color:var(--maroon); } .steps li.next i { background:var(--maroon); color:#fff; }
 
-  /* ---- Tab 4 ---- */
+  /* ---- Tab 4: payoff ---- */
+  .payhero { background:linear-gradient(135deg, var(--maroon) 0%, var(--maroon-deep) 100%); color:#fff; border-radius:var(--r); padding:28px; display:grid; grid-template-columns:1fr 1.2fr; gap:28px; align-items:center; }
+  @media (max-width: 860px) { .payhero { grid-template-columns:1fr; } }
+  .paylbl { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--tan); }
+  .paybig { font:800 clamp(44px, 7vw, 76px)/1 Fraunces, serif; margin:8px 0 6px; letter-spacing:-.02em; }
+  .paysub { color:rgba(255,255,255,.8); font-size:14px; }
+  .bar { background:rgba(255,255,255,.12); border-radius:12px; height:46px; margin:10px 0; overflow:hidden; }
+  .barfill { height:100%; border-radius:12px; display:flex; align-items:center; justify-content:space-between; padding:0 14px; font-size:13px; font-weight:700; transition:width .6s cubic-bezier(.2,.8,.2,1); min-width:150px; }
+  .barfill.before { width:100%; background:rgba(255,255,255,.22); } .barfill.after { background:var(--ok); }
+  .barfill b { font-size:15px; }
+  .credit { position:relative; display:flex; flex-direction:column; gap:10px; transition:opacity .3s; }
+  .credit.off { opacity:.5; } .credit .amt { font:800 30px Fraunces, serif; color:var(--maroon-deep); } .credit.off .amt { text-decoration:line-through; color:var(--dim); }
+  .credit .top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .credit .who { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--dim); }
+  .credit .who i { width:22px; height:22px; border-radius:50%; background:var(--tan-soft); display:inline-grid; place-items:center; font:800 10px Fraunces, serif; color:var(--brown-deep); font-style:normal; }
+  .sw { width:46px; height:26px; border-radius:999px; background:var(--line); border:0; position:relative; cursor:pointer; flex:none; transition:background .2s; }
+  .sw::after { content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:left .2s; }
+  .sw.on { background:var(--ok); } .sw.on::after { left:23px; }
+  .yearrow { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; }
+  .yr { border:1.5px dashed var(--line); border-radius:12px; padding:14px; text-align:center; }
+  .yr .y { font:800 20px Fraunces, serif; color:var(--dim); } .yr .v { font-size:13px; color:var(--dim); margin-top:4px; }
+  .yr.now { border:2px solid var(--ok); background:var(--ok-soft); } .yr.now .y { color:var(--ok); } .yr.now .v { color:var(--ok); font-weight:700; }
+  @media (max-width: 860px) { .yearrow { grid-template-columns:repeat(2, 1fr); } }
+
+  /* ---- Info panel ---- */
   .scen { display:flex; flex-direction:column; gap:12px; }
   .scen .head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
   .flow { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:12px; font-weight:600; }
@@ -166,6 +190,20 @@
   .seen { font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; background:var(--maroon); color:var(--white); }
   .quote { font-style:italic; color:#4a3a30; background:var(--cream); border-radius:8px; padding:10px 12px; font-size:13px; }
   .more li { padding:8px 0; border-bottom:1px solid var(--line); font-size:14px; } .more li:last-child { border:0; } .more b { color:var(--maroon-deep); }
+  .flowwrap { padding:16px 8px 6px; overflow-x:auto; }
+  #flow svg { width:100%; min-width:900px; height:auto; display:block; font-family:Inter, ui-sans-serif, system-ui, sans-serif; }
+  #flow .tile rect { fill:var(--white); stroke:var(--brown); stroke-width:3; } #flow .tile text { font-size:15px; font-weight:800; fill:var(--ink); }
+  #flow .tile svg { color:var(--brown); } #flow .tile.gate rect { fill:var(--maroon-soft); stroke:var(--maroon); } #flow .tile.gate svg { color:var(--maroon); } #flow .tile.gate text { fill:var(--maroon-deep); }
+  #flow .tile.end rect { fill:var(--ok); stroke:var(--ok); } #flow .tile.end svg { color:#fff; } #flow .tile.end text { fill:#fff; }
+  #flow .pe { fill:none; stroke:var(--brown); stroke-width:4; stroke-linecap:round; } #flow .pe.bad { stroke:var(--bad); stroke-dasharray:8 7; } #flow .pe.warn { stroke:var(--warn); stroke-dasharray:8 7; }
+  #flow .bub rect { fill:var(--tan-soft); stroke:var(--tan); stroke-width:2; } #flow .bub text { font-size:13.5px; font-weight:700; fill:var(--brown-deep); }
+  #flow .bub.bad rect { fill:var(--bad-soft); stroke:var(--bad); } #flow .bub.bad text { fill:var(--bad); }
+  #flow .bub.warn rect { fill:var(--warn-soft); stroke:var(--warn); } #flow .bub.warn text { fill:#7a5a14; }
+  #flow .why { font-size:12.5px; font-weight:600; fill:var(--dim); } #flow .why.bad { fill:var(--bad); } #flow .why.warn { fill:#7a5a14; }
+  #flow .yes { font-size:13px; font-weight:800; fill:var(--ok); } #flow .no { font-size:12px; font-weight:800; fill:var(--bad); }
+  .legend { display:flex; flex-wrap:wrap; gap:16px; padding:10px 10px 0; font-size:12px; color:var(--dim); font-weight:600; }
+  .legend .k { display:inline-block; width:22px; height:0; border-top:2px solid var(--brown); margin-right:6px; vertical-align:middle; }
+  .legend .k.bad { border-top-style:dashed; border-color:var(--bad); } .legend .k.end { width:12px; height:12px; border:0; background:var(--ok); border-radius:3px; } .legend .k.gate { width:12px; height:12px; border:0; background:var(--maroon-soft); outline:1.5px solid var(--maroon); transform:rotate(45deg) scale(.8); }
 </style>
 </head>
 <body>
@@ -192,6 +230,7 @@
       <button data-tab="company" class="active"><span class="n">1</span><span class="t">Company</span></button>
       <button data-tab="live"><span class="n">2</span><span class="t">Live run</span></button>
       <button data-tab="results"><span class="n">3</span><span class="t">Verdict &amp; results</span></button>
+      <button data-tab="payoff"><span class="n">4</span><span class="t">The payoff</span></button>
       <span class="sep"></span>
       <button data-tab="outcomes" class="info"><span class="n i">i</span><span class="t">Possible verdicts</span></button>
     </nav>
@@ -334,11 +373,42 @@
     <div id="claims"></div>
   </section>
 
-  <!-- ================= TAB 4 ================= -->
+  <!-- ================= TAB 4: payoff ================= -->
+  <section class="tab" id="tab-payoff">
+    <div class="eyebrow">Tax year 2025 · {{ company.name }}</div>
+    <h2 style="margin:4px 0 14px">Money that was sitting on the table</h2>
+    <div class="payhero">
+      <div>
+        <div class="paylbl">Credits applied to the 2025 return</div>
+        <div class="paybig num" id="payTotal">$0</div>
+        <div class="paysub" id="paySub"></div>
+      </div>
+      <div class="paybars">
+        <div class="paylbl">2025 state tax bill, estimated</div>
+        <div class="bar"><div class="barfill before"><span>Before</span><b class="num" id="barBefore"></b></div></div>
+        <div class="bar"><div class="barfill after" id="barAfter"><span>After credits</span><b class="num" id="barAfterVal"></b></div></div>
+        <div class="paysub">Flip a credit off to see what it was worth.</div>
+      </div>
+    </div>
+    <div class="grid g3" id="credits" style="margin-top:16px"></div>
+    <div class="card years" style="margin-top:16px">
+      <div class="eyebrow">Never claimed before</div>
+      <h3 style="margin:4px 0 12px">Hudson Forge has hired veterans since 2019. This is the first year a credit was filed.</h3>
+      <div class="yearrow" id="years"></div>
+      <p class="small dim" style="margin:12px 0 0">Earlier years are estimates from the same hiring pattern. Some may still be recoverable on an amended return. Ask the CPA.</p>
+    </div>
+  </section>
+
+  <!-- ================= Info: possible verdicts ================= -->
   <section class="tab" id="tab-outcomes">
     <div class="eyebrow">Reference, not a step</div>
     <h2 style="margin:4px 0 6px">Possible verdicts</h2>
-    <p class="dim" style="margin:0 0 16px; max-width:70ch">The CPA call is part of approving a claim on the Verdict &amp; results tab. This panel just explains what can come back from it. The CPA never sees our number; they work it out on their own, and the database decides whether the two figures agree.</p>
+    <p class="dim" style="margin:0 0 16px; max-width:70ch">If everything checks out, the path runs straight through to a claimed credit. Every other verdict sends TaxBeagle back to a specific step. The loops show where, and why.</p>
+    <div class="card flowwrap"><div id="flow"></div>
+      <div class="legend"><span><i class="k ok"></i>All good, keep going</span><span><i class="k bad"></i>Go back and try again</span></div>
+    </div>
+    <div style="margin-top:28px" class="eyebrow">In their words</div>
+    <h2 style="margin:4px 0 14px">What each verdict sounds like on the call</h2>
     <div class="grid g2" id="scenarios"></div>
 
     <div style="margin-top:28px" class="eyebrow">More to try</div>
@@ -386,6 +456,7 @@ function showTab(t) {
   tabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.tab === t));
   document.querySelectorAll(".tab").forEach(s => s.classList.toggle("active", s.id === "tab-" + t));
   if (t === "live" && !livePlayed && typeof DEMO !== "undefined" && DEMO) { livePlayed = true; playScript(); }
+  if (t === "payoff" && typeof renderPayoff === "function") { lastTotal = 0; renderPayoff(); }
   try { localStorage.setItem("taxbeagle.tab", t); } catch (_) {}
 }
 try { const t = localStorage.getItem("taxbeagle.tab"); if (t && document.getElementById("tab-" + t)) showTab(t); } catch (_) {}
@@ -586,9 +657,28 @@ function stepsOf(c) {
   return [steps, at];
 }
 
+/* Session-local view state. Nothing on the server shows as approved until the CPA call UX has happened in this browser. */
+const local = new Map();  // claim_id -> {state, ack}
+const PAST = ["sent", "confirmed", "ready", "approved", "rejected", "needs-info"];
+function demote(c) { if (!local.has(c.id) && (PAST.includes(c.state) || c.human_approved_at)) local.set(c.id, {state: PAST.includes(c.state) ? "unverified" : c.state, ack: false, demoted: true}); }
+function vm(c) {
+  const l = local.get(c.id); if (!l) return c;
+  const show = ["ready", "approved"].includes(l.state);
+  return {...c, state: l.state, human_approved_at: l.ack ? new Date().toISOString() : null,
+          cpa_value: show ? (c.cpa_value ?? c.agent_value) : null, cpa_at: show ? (c.cpa_at || new Date().toISOString()) : null, _local: l};
+}
+function localApprove(id) {
+  const l = local.get(id), c = claims.get(id);
+  if (l.state === "unverified") {
+    l.state = "sent"; render();
+    setTimeout(() => { l.state = "confirmed"; render(); }, 2600);
+    setTimeout(() => { l.state = "ready"; render(); }, 4200);
+  } else if (l.state === "ready") { l.state = "approved"; render(); }
+}
 function render() {
   const PRI = {approved: 0, ready: 1, sent: 2, confirmed: 2, "needs-info": 2, rejected: 2, unverified: 3, uncited: 4, compute_error: 4, not_eligible: 5};
-  const all = [...claims.values()].sort((a, b) => ((PRI[a.state] ?? 9) - (PRI[b.state] ?? 9)) || (b.created_at || "").localeCompare(a.created_at || ""));
+  claims.forEach(demote);
+  const all = [...claims.values()].map(vm).sort((a, b) => ((PRI[a.state] ?? 9) - (PRI[b.state] ?? 9)) || (b.created_at || "").localeCompare(a.created_at || ""));
   const isOld = c => c.superseded_by || (PROG[c.program_id] || {}).superseded_by;
   const list = all.filter(c => !isOld(c) && !dismissed.has(c.id)), old = all.filter(c => isOld(c) && !dismissed.has(c.id));
   const el = document.getElementById("claims");
@@ -660,7 +750,7 @@ function mockTranscript(c) {
   return lines;
 }
 function transcriptBlock(c) {
-  const hadCall = ["confirmed", "ready", "approved", "rejected", "needs-info"].includes(c.state) || c.cpa_value != null;
+  const hadCall = ["ready", "approved", "rejected", "needs-info"].includes(c.state) || (c.cpa_value != null && c.state !== "unverified" && c.state !== "sent" && c.state !== "confirmed");
   if (!hadCall) return "";
   const real = transcripts.get(c.id);
   const lines = real ? String(real.text || "").split("\n").map(l => { const m = l.match(/^(\w+):\s*(.*)$/); return m ? [m[1].toLowerCase() === "user" ? "cpa" : "agent", m[2]] : ["agent", l]; }).filter(x => x[1]) : mockTranscript(c);
@@ -672,17 +762,18 @@ function transcriptBlock(c) {
 const dismissed = new Set();  // view-only: a refresh brings the claim back
 function cancel(id) { dismissed.add(id); render(); }
 function actionFor(c) {
-  const id = esc(c.id);
+  const id = esc(c.id), loc = !!c._local;
   switch (c.state) {
-    case "unverified": return `<button class="btn" onclick="send('${id}')">Approve</button><span class="small dim" style="align-self:center">goes to the CPA first</span>`;
-    case "sent": case "confirmed": return `<button class="btn" disabled style="opacity:.55">Awaiting CPA verification</button><a class="btn ghost" href="/cpa?claim=${encodeURIComponent(c.id)}" target="_blank">Open the CPA's page</a>`;
+    case "unverified": return `<button class="btn" onclick="${loc ? "localApprove" : "send"}('${id}')">Approve</button><span class="small dim" style="align-self:center">goes to the CPA first</span>`;
+    case "sent": case "confirmed": return `<button class="btn" disabled style="opacity:.55">${c.state === "sent" ? "Calling the CPA" : "CPA answered, checking the match"}<span class="typing" style="margin-left:8px"><i style="background:#fff"></i><i style="background:#fff"></i><i style="background:#fff"></i></span></button>${loc ? "" : `<a class="btn ghost" href="/cpa?claim=${encodeURIComponent(c.id)}" target="_blank">Open the CPA's page</a>`}`;
     case "needs-info": return `<button class="btn" disabled style="opacity:.55">CPA must confirm first</button>`;
     case "rejected": return `<button class="btn" disabled style="opacity:.55">CPA disagreed. Corrected claim coming</button>`;
-    case "ready": return `<button class="btn ok" onclick="approve('${id}')">Approve ${money(c.agent_value)}</button>`;
+    case "ready": return `<button class="btn ok" onclick="${loc ? "localApprove" : "approve"}('${id}')">Approve ${money(c.agent_value)}</button>`;
     case "approved": return "";
-    default: return c.human_approved_at ? "" : `<button class="btn" onclick="acknowledge('${id}')">Approve verdict</button>`;
+    default: return c.human_approved_at ? "" : `<button class="btn" onclick="${loc ? "localAck" : "acknowledge"}('${id}')">Approve verdict</button>`;
   }
 }
+function localAck(id) { local.get(id).ack = true; render(); }
 async function acknowledge(id) {
   const r = await fetch(`/api/claims/${encodeURIComponent(id)}/acknowledge`, {method: "POST"});
   if (!r.ok) alert(await r.text());
@@ -699,6 +790,84 @@ async function approve(id) {
   if (!r.ok) alert("The gate refused it: " + await r.text());
   loadClaims();
 }
+
+/* ---------- Tab 4: flowchart ---------- */
+function drawFlow() {
+  const W = 1240, H = 420, Y = 120, tw = 150, th = 104;
+  const big = k => I[k].replace("<svg ", '<svg width="40" height="40" ');
+  const tiles = [  // [cx, label, icon, kind]
+    [120, "Read the rules", "book", "ok"], [320, "Do the math", "lock", "ok"], [520, "Ask the CPA", "phone", "ok"],
+    [720, "Same number?", "q", "gate"], [920, "You approve", "check", "ok"], [1120, "Credit claimed!", "check", "end"],
+  ];
+  const tile = ([cx, label, icon, kind]) => `<g class="tile ${kind}" transform="translate(${cx - tw / 2} ${Y - th / 2})">
+      <rect width="${tw}" height="${th}" rx="${kind === "end" ? 52 : 22}"/>
+      <g transform="translate(${tw / 2 - 20} 14)">${big(icon)}</g>
+      <text x="${tw / 2}" y="84" text-anchor="middle">${label}</text></g>`;
+  const arrow = (x1, x2, cls = "") => `<path class="pe ${cls}" d="M${x1} ${Y} H${x2}" marker-end="url(#pa${cls ? "-" + cls : ""})"/>`;
+  const bubble = (cx, cy, text, kind) => `<g class="bub ${kind}" transform="translate(${cx - 95} ${cy - 24})"><rect width="190" height="48" rx="24"/><text x="95" y="29" text-anchor="middle">${text}</text></g>`;
+  // loops: a fat friendly curve from a bubble back up into a tile
+  const loop = (bx, by, tx, cls) => `<path class="pe ${cls}" d="M${bx} ${by - 24} C ${bx} ${by - 90}, ${tx} ${Y + th / 2 + 70}, ${tx} ${Y + th / 2 + 4}" marker-end="url(#pa-${cls})"/>`;
+  const drop = (x, y1, y2, cls) => `<path class="pe ${cls}" d="M${x} ${y1} V${y2}" marker-end="url(#pa-${cls})"/>`;
+  const svg = [
+    `<defs>${["", "bad", "warn"].map(k => `<marker id="pa${k ? "-" + k : ""}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${k === "bad" ? "#a3262f" : k === "warn" ? "#b8862b" : "#8a5a33"}"/></marker>`).join("")}</defs>`,
+    arrow(195, 245), arrow(395, 445), arrow(595, 645), arrow(795, 845), `<text class="yes" x="820" y="${Y - 10}" text-anchor="middle">yes!</text>`, arrow(995, 1045),
+    // 1. can't find it -> read again
+    drop(120, Y + th / 2, 250, "warn"), bubble(120, 276, "Can't find it in the rules", "warn"), loop(60, 276, 88, "warn"),
+    `<text class="why warn" x="120" y="336" text-anchor="middle">read it again</text>`,
+    // 2. rule not met -> stop, you sign off
+    drop(320, Y + th / 2, 250, ""), bubble(320, 276, "A rule isn't met", "neutral"),
+    `<text class="why" x="320" y="336" text-anchor="middle">stops here. you sign off the "no"</text>`,
+    // 4. different number -> do the math again
+    drop(720, Y + th / 2, 250, "bad"), `<text class="no" x="738" y="${Y + th / 2 + 40}">no</text>`, bubble(720, 276, "Different number", "bad"), loop(640, 276, 352, "bad"),
+    `<text class="why bad" x="720" y="336" text-anchor="middle">do the math again, with the CPA's note</text>`,
+    // 4b. CPA not sure -> ask again
+    drop(920, Y + th / 2, 250, "warn"), bubble(920, 276, "CPA isn't sure", "warn"), loop(840, 276, 552, "warn"),
+    `<text class="why warn" x="920" y="336" text-anchor="middle">ask again until it's a clear yes</text>`,
+    `<text class="why" x="920" y="${Y + th / 2 + 40}" text-anchor="start" dx="-150">or wrong code</text>`,
+    ...tiles.map(tile),
+  ].join("");
+  document.getElementById("flow").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Picture-book flow of the verdicts">${svg}</svg>`;
+}
+
+/* ---------- Tab 4: payoff (baked for the demo) ---------- */
+const TAX_BEFORE = 186000;  // estimated 2025 NYS franchise tax before credits
+const CREDITS = [
+  {id: "vet-ramos", name: "NY Hire a Veteran Credit", who: "Elena Ramos", initials: "ER", amount: 12600, note: "15% of first-year wages, under the $15,000 cap. Verified by the CPA on the call.", form: "Form CT-643"},
+  {id: "wotc", name: "Federal Work Opportunity Tax Credit", who: "Elena Ramos", initials: "ER", amount: 5600, note: "40% of the first $14,000 in wages for a veteran hired after 6+ months out of work.", form: "Form 5884"},
+  {id: "itc", name: "NY Investment Tax Credit", who: "Hudson Forge", initials: "HF", amount: 38500, note: "5% of $770,000 in new CNC and inspection equipment placed in service in 2025.", form: "Form CT-46"},
+];
+const creditOn = Object.fromEntries(CREDITS.map(c => [c.id, true]));
+const fmt0 = v => "$" + Math.round(v).toLocaleString();
+let payAnim = null;
+function countTo(el, from, to, ms = 900) {
+  if (payAnim) cancelAnimationFrame(payAnim);
+  const t0 = performance.now();
+  const tick = now => { const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt0(from + (to - from) * e); if (k < 1) payAnim = requestAnimationFrame(tick); };
+  payAnim = requestAnimationFrame(tick);
+}
+let lastTotal = 0;
+function renderPayoff(animate = true) {
+  const total = CREDITS.filter(c => creditOn[c.id]).reduce((a, c) => a + c.amount, 0);
+  const el = document.getElementById("payTotal");
+  animate ? countTo(el, lastTotal, total) : (el.textContent = fmt0(total)); lastTotal = total;
+  const n = CREDITS.filter(c => creditOn[c.id]).length;
+  document.getElementById("paySub").textContent = n ? `${n} credit${n === 1 ? "" : "s"} across ${new Set(CREDITS.filter(c => creditOn[c.id]).map(c => c.who)).size} ${n === 1 ? "filer" : "people and the company"}. ${(100 * total / TAX_BEFORE).toFixed(0)}% off the state bill.` : "Nothing applied. This is what every prior year looked like.";
+  document.getElementById("barBefore").textContent = fmt0(TAX_BEFORE);
+  const after = document.getElementById("barAfter"); after.style.width = Math.max(12, 100 * (TAX_BEFORE - total) / TAX_BEFORE) + "%";
+  document.getElementById("barAfterVal").textContent = fmt0(TAX_BEFORE - total);
+  document.getElementById("credits").innerHTML = CREDITS.map(c => `
+    <div class="card credit ${creditOn[c.id] ? "" : "off"}">
+      <div class="top"><div><div class="eyebrow">${esc(c.form)}</div><h3 style="margin-top:4px">${esc(c.name)}</h3></div>
+        <button class="sw ${creditOn[c.id] ? "on" : ""}" aria-label="Apply ${esc(c.name)}" onclick="toggleCredit('${c.id}')"></button></div>
+      <div class="amt num">${fmt0(c.amount)}</div>
+      <div class="who"><i>${c.initials}</i>${esc(c.who)}</div>
+      <p class="small" style="margin:0">${esc(c.note)}</p>
+    </div>`).join("");
+  const perYear = CREDITS.reduce((a, c) => a + c.amount, 0);
+  document.getElementById("years").innerHTML = [2022, 2023, 2024].map(y => `<div class="yr"><div class="y">${y}</div><div class="v">not claimed · ~${fmt0(Math.round(perYear * (y === 2024 ? .62 : y === 2023 ? .41 : .33) / 100) * 100)} missed</div></div>`).join("")
+    + `<div class="yr now"><div class="y">2025</div><div class="v">${fmt0(total)} claimed</div></div>`;
+}
+function toggleCredit(id) { creditOn[id] = !creditOn[id]; renderPayoff(); }
 
 /* ---------- Tab 4: scenarios ---------- */
 const SCENARIOS = [
@@ -749,7 +918,7 @@ new EventSource("/api/stream").onmessage = e => {
   }
   loadLog();
 };
-renderStages(); renderScenarios();
+renderStages(); renderScenarios(); drawFlow(); renderPayoff(false);
 loadTranscripts().then(loadClaims).then(() => { [...claims.values()].forEach(c => seenClaimState.set(c.id, c.state + "|" + (c.human_approved_at || ""))); loadLog(); });
 setInterval(loadLog, 2000); setInterval(() => loadTranscripts().then(render), 10000);
 </script>
