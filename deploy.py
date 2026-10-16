@@ -7,6 +7,7 @@
     python deploy.py --shell CMD  run one command in the parent's app dir
 """
 import hashlib
+import hmac
 import os
 import sys
 from pathlib import Path
@@ -21,6 +22,15 @@ SKIP_FILES = {"deploy.py"}
 SURREAL_VERSION = "3.3.2"
 
 
+def env_value(key, default=""):
+    # APP_<KEY> wins: lets a host that reserves a name (e.g. ANTHROPIC_API_KEY in Claude Code) pass it through.
+    v = os.environ.get(f"APP_{key}") or os.environ.get(key) or default
+    if key == "CPA_TOOL_SECRET" and not v and os.environ.get("DAYTONA_API_KEY"):
+        # Stable across fresh containers without another secret to manage.
+        v = hmac.new(os.environ["DAYTONA_API_KEY"].encode(), b"cpa-tool-secret", hashlib.sha256).hexdigest()[:32]
+    return v
+
+
 def ensure_env_file():
     """No .env (e.g. a fresh cloud session): build it from process env, using .env.example's names and defaults."""
     env = ROOT / ".env"
@@ -30,7 +40,7 @@ def ensure_env_file():
     for line in (ROOT / ".env.example").read_text().splitlines():
         key, sep, default = line.partition("=")
         if sep and not key.startswith("#"):
-            lines.append(f"{key}={os.environ.get(key, default)}")
+            lines.append(f"{key}={env_value(key, default)}")
     env.write_text("\n".join(lines) + "\n")
     print("wrote .env from environment variables")
 
@@ -98,6 +108,12 @@ rels = list(files())
 sb.process.exec("mkdir -p " + " ".join(sorted({f"{APP}/{r.parent}" for r in rels})))
 sb.fs.upload_files([FileUpload(source=content(r), destination=f"{APP}/{r}") for r in rels])
 print(f"uploaded {len(rels)} files to {APP}")
+
+missing = [k for k in ("DAYTONA_API_KEY", "ANTHROPIC_API_KEY", "ANCHOR_API_KEY") if not os.getenv(k)]
+if missing:
+    print(f"WARNING: unset in .env: {missing}")
+if "--print-tool-secret" in sys.argv:
+    print("CPA_TOOL_SECRET for the ElevenLabs X-Tool-Secret header:", os.getenv("CPA_TOOL_SECRET"))
 
 if "--netcheck" in sys.argv:
     code, out = sh(sb, "bash netcheck.sh")
