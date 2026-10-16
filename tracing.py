@@ -15,7 +15,7 @@ if os.getenv("ARIZE_SPACE_ID") and os.getenv("ARIZE_API_KEY"):
         space_id=os.environ["ARIZE_SPACE_ID"],
         api_key=os.environ["ARIZE_API_KEY"],
         project_name=os.getenv("ARIZE_PROJECT", "incentive-agent"),
-        endpoint=Endpoint.ARIZE,
+        endpoint=Endpoint.ARIZE.value,  # str() of the enum is "Endpoint.ARIZE" on 3.11+
         transport=Transport.HTTP,
         verbose=False,
     )
