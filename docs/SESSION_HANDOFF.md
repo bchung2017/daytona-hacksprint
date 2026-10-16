@@ -30,7 +30,8 @@ Read `docs/tech-spec.md` for the design.
 ## Keys expected in this session
 
 Set: `DAYTONA_API_KEY`, `APP_ANTHROPIC_API_KEY`, `ANCHOR_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`,
-`ARIZE_SPACE_ID`, `ARIZE_API_KEY`, `MEMORY_URL`, `MEMORY_CONTEXT`, `MEMORY_API_KEY`.
+`ARIZE_SPACE_ID`, `ARIZE_API_KEY`, `MEMORY_URL`, `MEMORY_CONTEXT`, `MEMORY_API_KEY`, `ELEVENLABS_WEBHOOK_SECRET`
+(HMAC secret from the ElevenLabs post-call webhook; optional, but step 4.4 needs it).
 
 - `ANTHROPIC_API_KEY` is reserved by the Claude Code host, so it's supplied as `APP_ANTHROPIC_API_KEY`; `deploy.py` maps
   `APP_<KEY>` to `<KEY>` in the parent's `.env`. Both unset: stop and tell the user.
@@ -45,7 +46,7 @@ Known values (not secrets): `MEMORY_URL=https://srv1.spectron.aws-usw2.surreal.c
 cd /home/user/daytona-hacksprint
 git fetch origin claude/vibrant-hopper-fz3g9w && git checkout claude/vibrant-hopper-fz3g9w && git pull
 for k in DAYTONA_API_KEY ANTHROPIC_API_KEY APP_ANTHROPIC_API_KEY ANCHOR_API_KEY ELEVENLABS_API_KEY ELEVENLABS_AGENT_ID \
-         CPA_TOOL_SECRET ARIZE_SPACE_ID ARIZE_API_KEY MEMORY_URL MEMORY_CONTEXT MEMORY_API_KEY; do
+         CPA_TOOL_SECRET ARIZE_SPACE_ID ARIZE_API_KEY MEMORY_URL MEMORY_CONTEXT MEMORY_API_KEY ELEVENLABS_WEBHOOK_SECRET; do
   [ -n "${!k}" ] && echo "set   $k" || echo "unset $k"; done
 pip install -q daytona==0.224.1 python-dotenv
 rm -f .env   # always regenerate: a stale .env would ship old (missing) keys to the parent
