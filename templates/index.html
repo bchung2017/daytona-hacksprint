@@ -657,28 +657,42 @@ function stepsOf(c) {
   return [steps, at];
 }
 
-/* Session-local view state. Nothing on the server shows as approved until the CPA call UX has happened in this browser. */
+/* Exactly one claim is wired to the real CPA call: the first server-side "unverified" one. Every other card is
+   front-end only. Its Approve plays a scripted CPA call in this browser and nothing is written anywhere. */
 const local = new Map();  // claim_id -> {state, ack}
-const PAST = ["sent", "confirmed", "ready", "approved", "rejected", "needs-info"];
-function demote(c) { if (!local.has(c.id) && (PAST.includes(c.state) || c.human_approved_at)) local.set(c.id, {state: PAST.includes(c.state) ? "unverified" : c.state, ack: false, demoted: true}); }
-function vm(c) {
-  const l = local.get(c.id); if (!l) return c;
-  const show = ["ready", "approved"].includes(l.state);
-  return {...c, state: l.state, human_approved_at: l.ack ? new Date().toISOString() : null,
-          cpa_value: show ? (c.cpa_value ?? c.agent_value) : null, cpa_at: show ? (c.cpa_at || new Date().toISOString()) : null, _local: l};
+let liveId = null;
+function assignLive(byDate) {
+  if (liveId && claims.has(liveId)) return;
+  const ok = c => !c.superseded_by && !(PROG[c.program_id] || {}).superseded_by && (c.agent_value || 0) > 0;
+  const pick = byDate.find(c => ok(c) && c.state === "unverified") || byDate.find(c => ok(c) && c.state === "sent") || byDate.find(ok);
+  liveId = pick ? pick.id : null;
 }
-function localApprove(id) {
-  const l = local.get(id), c = claims.get(id);
+let liveStarted = false;  // set when Approve is clicked on the live card in this session
+function vm(c) {
+  if (c.id === liveId) {  // real card. Until Approve is clicked here, it presents as possibly eligible whatever the server says.
+    if (!liveStarted && c.state !== "unverified") return {...c, state: "unverified", cpa_value: null, cpa_at: null, human_approved_at: null, _live: true};
+    return {...c, _live: true};
+  }
+  if (!local.has(c.id)) local.set(c.id, {state: PAST.includes(c.state) || c.state === "unverified" ? "unverified" : c.state, ack: false});
+  const l = local.get(c.id), show = ["ready", "approved"].includes(l.state);
+  return {...c, state: l.state, human_approved_at: l.ack ? "local" : null, _local: true,
+          cpa_value: show ? (c.cpa_value ?? c.agent_value) : null, cpa_at: show ? (c.cpa_at || new Date().toISOString()) : null};
+}
+const PAST = ["sent", "confirmed", "ready", "approved", "rejected", "needs-info"];
+function fakeApprove(id) {
+  const l = local.get(id);
   if (l.state === "unverified") {
     l.state = "sent"; render();
     setTimeout(() => { l.state = "confirmed"; render(); }, 2600);
     setTimeout(() => { l.state = "ready"; render(); }, 4200);
   } else if (l.state === "ready") { l.state = "approved"; render(); }
 }
+function fakeAck(id) { local.get(id).ack = true; render(); }
 function render() {
   const PRI = {approved: 0, ready: 1, sent: 2, confirmed: 2, "needs-info": 2, rejected: 2, unverified: 3, uncited: 4, compute_error: 4, not_eligible: 5};
-  claims.forEach(demote);
-  const all = [...claims.values()].map(vm).sort((a, b) => ((PRI[a.state] ?? 9) - (PRI[b.state] ?? 9)) || (b.created_at || "").localeCompare(a.created_at || ""));
+  const byDate = [...claims.values()].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+  assignLive(byDate);
+  const all = byDate.map(vm).sort((a, b) => ((PRI[a.state] ?? 9) - (PRI[b.state] ?? 9)) || (b.created_at || "").localeCompare(a.created_at || ""));
   const isOld = c => c.superseded_by || (PROG[c.program_id] || {}).superseded_by;
   const list = all.filter(c => !isOld(c) && !dismissed.has(c.id)), old = all.filter(c => isOld(c) && !dismissed.has(c.id));
   const el = document.getElementById("claims");
@@ -762,15 +776,15 @@ function transcriptBlock(c) {
 const dismissed = new Set();  // view-only: a refresh brings the claim back
 function cancel(id) { dismissed.add(id); render(); }
 function actionFor(c) {
-  const id = esc(c.id), loc = !!c._local;
+  const id = esc(c.id), loc = !!c._local;  // loc: front-end only
   switch (c.state) {
-    case "unverified": return `<button class="btn" onclick="${loc ? "localApprove" : "send"}('${id}')">Approve</button><span class="small dim" style="align-self:center">goes to the CPA first</span>`;
+    case "unverified": return `<button class="btn" onclick="${loc ? "fakeApprove" : "startLive"}('${id}')">Approve</button><span class="small dim" style="align-self:center">goes to the CPA first</span>`;
     case "sent": case "confirmed": return `<button class="btn" disabled style="opacity:.55">${c.state === "sent" ? "Calling the CPA" : "CPA answered, checking the match"}<span class="typing" style="margin-left:8px"><i style="background:#fff"></i><i style="background:#fff"></i><i style="background:#fff"></i></span></button>${loc ? "" : `<a class="btn ghost" href="/cpa?claim=${encodeURIComponent(c.id)}" target="_blank">Open the CPA's page</a>`}`;
     case "needs-info": return `<button class="btn" disabled style="opacity:.55">CPA must confirm first</button>`;
     case "rejected": return `<button class="btn" disabled style="opacity:.55">CPA disagreed. Corrected claim coming</button>`;
-    case "ready": return `<button class="btn ok" onclick="${loc ? "localApprove" : "approve"}('${id}')">Approve ${money(c.agent_value)}</button>`;
+    case "ready": return `<button class="btn ok" onclick="${loc ? "fakeApprove" : "approve"}('${id}')">Approve ${money(c.agent_value)}</button>`;
     case "approved": return "";
-    default: return c.human_approved_at ? "" : `<button class="btn" onclick="${loc ? "localAck" : "acknowledge"}('${id}')">Approve verdict</button>`;
+    default: return c.human_approved_at ? "" : `<button class="btn" onclick="${loc ? "fakeAck" : "acknowledge"}('${id}')">Approve verdict</button>`;
   }
 }
 function localAck(id) { local.get(id).ack = true; render(); }
@@ -780,6 +794,12 @@ async function acknowledge(id) {
   loadClaims();
 }
 async function loadClaims() { (await (await fetch("/api/claims")).json()).forEach(c => claims.set(c.id, c)); render(); }
+async function startLive(id) {
+  liveStarted = true;
+  const c = claims.get(id);
+  if (c && c.state !== "unverified") { const r = await fetch(`/api/claims/${encodeURIComponent(id)}/reset`, {method: "POST"}); if (!r.ok) { alert(await r.text()); return; } }
+  await send(id);
+}
 async function send(id) {
   const r = await fetch(`/api/claims/${encodeURIComponent(id)}/send`, {method: "POST"});
   if (r.ok) window.open((await r.json()).cpa_url || `/cpa?claim=${encodeURIComponent(id)}`, "_blank");

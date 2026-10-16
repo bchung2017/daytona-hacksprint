@@ -139,6 +139,16 @@ def api_acknowledge(claim_id):
     return jsonify(r)
 
 
+@app.post("/api/claims/<claim_id>/reset")
+def api_reset(claim_id):
+    """Demo helper: put a claim back to unverified so the real CPA call can be run again."""
+    r = store.q("UPDATE ONLY $c SET state = 'unverified', cpa_value = NONE, cpa_confirmed = NONE, cpa_code = NONE, "
+                "cpa_at = NONE, cpa_transcript_ref = NONE WHERE superseded_by = NONE RETURN AFTER", c=store.rid(claim_id))
+    if not r:
+        abort(409, "claim not found or superseded")
+    return jsonify(r)
+
+
 @app.post("/api/cpa_tool")
 def api_cpa_tool():
     if not voice.tool_secret_ok(request.headers.get("X-Tool-Secret")):
