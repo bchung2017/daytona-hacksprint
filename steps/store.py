@@ -36,6 +36,7 @@ DEFINE EVENT OVERWRITE gate ON claim
   THEN (UPDATE $after.id SET state = 'ready');
 
 DEFINE TABLE OVERWRITE run_log SCHEMALESS;
+DEFINE TABLE OVERWRITE transcript SCHEMALESS;
 """
 
 _lock = threading.Lock()

@@ -33,6 +33,9 @@
   nav button .n { width:20px; height:20px; border-radius:50%; background:var(--tan-soft); color:var(--brown-deep); display:grid; place-items:center; font-size:11px; font-weight:800; }
   nav button.active { background:var(--maroon); color:var(--white); box-shadow:var(--shadow); }
   nav button.active .n { background:rgba(255,255,255,.2); color:var(--white); }
+  nav .sep { width:1px; background:var(--line); margin:4px 4px; }
+  nav button.info { color:var(--brown); } nav button.info .n.i { background:transparent; border:1.5px solid var(--brown); color:var(--brown); font-family:Fraunces, serif; font-style:italic; }
+  nav button.info.active { background:var(--brown); } nav button.info.active .n.i { border-color:rgba(255,255,255,.6); color:var(--white); }
   .run { background:var(--brown); color:var(--white); border:0; border-radius:10px; padding:10px 16px; font:inherit; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; }
   .run:hover { background:var(--brown-deep); } .run:disabled { opacity:.6; cursor:default; }
   .run .paw { width:16px; height:16px; }
@@ -114,6 +117,8 @@
   .btn { background:var(--maroon); color:var(--white); border:0; border-radius:9px; padding:9px 14px; font:inherit; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; }
   .btn.ghost { background:transparent; color:var(--maroon); border:1.5px solid var(--maroon); }
   .btn.ok { background:var(--ok); }
+  .btn.cancel { background:transparent; color:var(--dim); border:1.5px solid var(--line); margin-left:auto; }
+  .btn.cancel:hover { color:var(--bad); border-color:var(--bad); }
   .figures { display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:stretch; }
   .fig { background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
   .fig .k { font-size:12px; color:var(--dim); } .fig .v { font:800 24px Fraunces, serif; margin-top:2px; }
@@ -134,6 +139,11 @@
   .checks .vd { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--dim); margin-left:4px; }
   .checks li.ok .vd { color:var(--ok); } .checks li.bad .vd { color:var(--bad); }
   .checks .d { color:#4a3a30; margin-top:2px; }
+  .tx { margin-top:10px; display:grid; gap:8px; }
+  .tx .line { display:grid; grid-template-columns:72px 1fr; gap:10px; font-size:13px; padding:8px 10px; border-radius:8px; background:var(--cream); border:1px solid var(--line); }
+  .tx .line.cpa { background:var(--tan-soft); }
+  .tx .r { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--brown-deep); padding-top:2px; }
+  .tx .line.agent .r { color:var(--maroon); }
   .steps { list-style:none; margin:0; padding:0; display:flex; gap:6px; }
   .steps li { flex:1; display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--dim); padding:6px 8px; border-radius:8px; background:var(--white); border:1px solid var(--line); }
   .steps li i { width:18px; height:18px; border-radius:50%; display:grid; place-items:center; font-style:normal; font-size:11px; font-weight:800; background:var(--tan-soft); color:var(--brown-deep); }
@@ -176,7 +186,8 @@
       <button data-tab="company" class="active"><span class="n">1</span><span class="t">Company</span></button>
       <button data-tab="live"><span class="n">2</span><span class="t">Live run</span></button>
       <button data-tab="results"><span class="n">3</span><span class="t">Verdict &amp; results</span></button>
-      <button data-tab="outcomes"><span class="n">4</span><span class="t">What the CPA can say</span></button>
+      <span class="sep"></span>
+      <button data-tab="outcomes" class="info"><span class="n i">i</span><span class="t">Possible verdicts</span></button>
     </nav>
     <button class="run" id="run">
       <svg class="paw" viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="8" r="2.4"/><circle cx="12" cy="5.5" r="2.4"/><circle cx="17" cy="8" r="2.4"/><path d="M12 10.5c-3.5 0-6.5 3-6.5 6 0 1.8 1.4 3 3.2 3 1.2 0 2.1-.5 3.3-.5s2.1.5 3.3.5c1.8 0 3.2-1.2 3.2-3 0-3-3-6-6.5-6z"/></svg>
@@ -269,9 +280,9 @@
 
   <!-- ================= TAB 4 ================= -->
   <section class="tab" id="tab-outcomes">
-    <div class="eyebrow">The phone call</div>
-    <h2 style="margin:4px 0 6px">What the CPA can say, and what happens next</h2>
-    <p class="dim" style="margin:0 0 16px; max-width:70ch">The CPA never sees our number. They work it out on their own and tell our voice agent. The database itself decides whether the two figures agree. These are the four things that can come back.</p>
+    <div class="eyebrow">Reference, not a step</div>
+    <h2 style="margin:4px 0 6px">Possible verdicts</h2>
+    <p class="dim" style="margin:0 0 16px; max-width:70ch">The CPA call is part of approving a claim on the Verdict &amp; results tab. This panel just explains what can come back from it. The CPA never sees our number; they work it out on their own, and the database decides whether the two figures agree.</p>
     <div class="grid g2" id="scenarios"></div>
 
     <div style="margin-top:28px" class="eyebrow">More to try</div>
@@ -480,7 +491,7 @@ function render() {
   const PRI = {approved: 0, ready: 1, sent: 2, confirmed: 2, "needs-info": 2, rejected: 2, unverified: 3, uncited: 4, compute_error: 4, not_eligible: 5};
   const all = [...claims.values()].sort((a, b) => ((PRI[a.state] ?? 9) - (PRI[b.state] ?? 9)) || (b.created_at || "").localeCompare(a.created_at || ""));
   const isOld = c => c.superseded_by || (PROG[c.program_id] || {}).superseded_by;
-  const list = all.filter(c => !isOld(c)), old = all.filter(isOld);
+  const list = all.filter(c => !isOld(c) && !dismissed.has(c.id)), old = all.filter(c => isOld(c) && !dismissed.has(c.id));
   const el = document.getElementById("claims");
   if (!all.length) { el.innerHTML = '<div class="card empty">No results yet. Run the agent from the top right.</div>'; return; }
   const card = c => {
@@ -501,6 +512,7 @@ function render() {
         ${c.superseded_by ? "" : (([steps, at]) => `<ol class="steps">${steps.map((t, i) => `<li class="${i < at ? "done" : i === at ? "next" : ""}"><i>${i + 1}</i>${t}</li>`).join("")}</ol>`)(stepsOf(c))}
         <div class="actions">
           ${c.superseded_by ? "" : actionFor(c)}
+          <button class="btn cancel" onclick="cancel('${esc(c.id)}')" title="Remove from this view">Cancel</button>
         </div>
       </div>
       <div class="results">
@@ -517,7 +529,8 @@ function render() {
           ${person.hire_date ? `<div class="dim">Start date<b>${esc(person.hire_date)}</b></div>` : ""}
           ${c.cpa_at ? `<div class="dim">CPA answered<b>${esc(new Date(c.cpa_at).toLocaleString())}</b></div>` : ""}
         </div>
-        ${(() => { if (/superseded/.test(c.reason || "")) return ""; const cl = checklist(c.reason); if (cl) return `<div class="eyebrow" style="margin-top:16px">What was checked</div>${cl}`; return c.reason && c.state === "not_eligible" ? `<div class="small" style="margin-top:12px"><b>Why not:</b> ${esc(humanize(c.reason))}</div>` : ""; })()}
+        ${(() => { if (/superseded/.test(c.reason || "")) return ""; const cl = checklist(c.reason); if (cl) return `<details class="cites"><summary>What was checked (${cl.split("<li").length - 1} rules)</summary>${cl}</details>`; return c.reason && c.state === "not_eligible" ? `<div class="small" style="margin-top:12px"><b>Why not:</b> ${esc(humanize(c.reason))}</div>` : ""; })()}
+        ${transcriptBlock(c)}
         <details class="cites"><summary>${cites.length} fact${cites.length === 1 ? "" : "s"} quoted from the official source</summary>
           ${cites.map(x => `<blockquote class="${x.cited ? "" : "miss"}"><div class="c">${esc(x.criterion)}</div><div>${esc(x.value)}</div><div class="q">“${esc(x.quote)}”</div><a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(x.source_url)}</a></blockquote>`).join("")}
         </details>
@@ -528,6 +541,37 @@ function render() {
     (old.length ? `<details class="tech"><summary>${old.length} more: older versions of a credit, or claims that were replaced</summary><div style="padding-top:14px">${old.map(card).join("")}</div></details>` : "");
   renderScenarios();
 }
+/* Call transcript: the real one from the post-call webhook when we have it, otherwise a reconstruction from the claim. */
+const transcripts = new Map();  // claim_id -> {text, at, conversation_id}
+async function loadTranscripts() {
+  try { (await (await fetch("/api/transcripts")).json()).forEach(t => { if (t.claim_id && !transcripts.has(t.claim_id)) transcripts.set(t.claim_id, t); }); } catch (_) {}
+}
+function spokenMoney(v) { return v == null ? "" : Number(v).toLocaleString(); }
+function mockTranscript(c) {
+  const who = nameOf((c.agent_inputs || {}).subject_id || c.company_id), p = PEOPLE[(c.agent_inputs || {}).subject_id] || {};
+  const inp = c.agent_inputs || {};
+  const lines = [
+    ["agent", `Hi, this is TaxBeagle calling for ${COMPANY.name} about the ${shortProg(c.program_id)}. Could you read me the six-digit code on your screen?`],
+    ["cpa", "Sure. (reads the code)"],
+    ["agent", `Thanks, that checks out. This is for ${who}${p.role ? ", " + p.role.toLowerCase() : ""}, start date ${p.hire_date || "on file"}, ${Number(inp.hours_first_12_months || p.hours_first_12_months || 0).toLocaleString()} hours and $${spokenMoney(inp.wages_first_12_months || p.wages_first_12_months)} in wages over the first twelve months. What credit figure do you get?`],
+  ];
+  if (c.state === "needs-info") lines.push(["cpa", `Roughly ${spokenMoney(c.cpa_value) || "twelve six"}, I think. I'd want to double-check the hours.`], ["agent", "Understood. I'll hold this one until you can confirm a figure."]);
+  else if (c.state === "rejected") lines.push(["cpa", `I get $${spokenMoney(c.cpa_value)}. The wage number you have includes pay that doesn't qualify.`], ["agent", `To confirm: $${spokenMoney(c.cpa_value)}, final?`], ["cpa", "Yes, confirmed."], ["agent", "Recorded. We'll rework it with that correction."]);
+  else lines.push(["cpa", `Fifteen percent of the wages, under the cap. $${spokenMoney(c.cpa_value)}.`], ["agent", `To confirm: $${spokenMoney(c.cpa_value)}, final?`], ["cpa", "Yes, confirmed."], ["agent", "Recorded. Thank you."]);
+  return lines;
+}
+function transcriptBlock(c) {
+  const hadCall = ["confirmed", "ready", "approved", "rejected", "needs-info"].includes(c.state) || c.cpa_value != null;
+  if (!hadCall) return "";
+  const real = transcripts.get(c.id);
+  const lines = real ? String(real.text || "").split("\n").map(l => { const m = l.match(/^(\w+):\s*(.*)$/); return m ? [m[1].toLowerCase() === "user" ? "cpa" : "agent", m[2]] : ["agent", l]; }).filter(x => x[1]) : mockTranscript(c);
+  const when = c.cpa_at ? new Date(c.cpa_at).toLocaleString() : "";
+  return `<details class="cites"><summary>Call transcript${real ? "" : " (reconstructed)"}${when ? ` · ${esc(when)}` : ""}</summary>
+    <div class="tx">${lines.map(([r, t]) => `<div class="line ${r}"><span class="r">${r === "cpa" ? "CPA" : "TaxBeagle"}</span><span>${esc(t)}</span></div>`).join("")}
+    ${real ? "" : '<div class="small dim" style="margin-top:8px">Reconstructed from the recorded call result. The verbatim transcript appears here once the post-call webhook delivers it.</div>'}</div></details>`;
+}
+const dismissed = new Set();  // view-only: a refresh brings the claim back
+function cancel(id) { dismissed.add(id); render(); }
 function actionFor(c) {
   const id = esc(c.id);
   switch (c.state) {
@@ -604,8 +648,8 @@ new EventSource("/api/stream").onmessage = e => {
   loadLog();
 };
 renderStages(); renderScenarios();
-loadClaims().then(() => { [...claims.values()].forEach(c => seenClaimState.set(c.id, c.state + "|" + (c.human_approved_at || ""))); loadLog(); });
-setInterval(loadLog, 2000);
+loadTranscripts().then(loadClaims).then(() => { [...claims.values()].forEach(c => seenClaimState.set(c.id, c.state + "|" + (c.human_approved_at || ""))); loadLog(); });
+setInterval(loadLog, 2000); setInterval(() => loadTranscripts().then(render), 10000);
 </script>
 </body>
 </html>

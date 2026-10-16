@@ -83,6 +83,11 @@ def api_log():
     return jsonify(store.q("SELECT * FROM run_log ORDER BY at DESC LIMIT 200"))
 
 
+@app.get("/api/transcripts")
+def api_transcripts():
+    return jsonify(store.q("SELECT claim_id, conversation_id, text, at FROM transcript ORDER BY at DESC LIMIT 100"))
+
+
 @app.get("/api/stream")
 def api_stream():
     q = queue.Queue()
