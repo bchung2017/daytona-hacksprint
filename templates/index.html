@@ -740,7 +740,7 @@ function fakeApprove(id) {
 function fakeAck(id) { local.get(id).ack = true; render(); }
 function render() {
   const PRI = {approved: 0, ready: 1, sent: 2, confirmed: 2, "needs-info": 2, rejected: 2, unverified: 3, uncited: 4, compute_error: 4, not_eligible: 5};
-  const byDate = [...claims.values()].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+  const byDate = [...claims.values()].filter(c => c.company_id === COMPANY.company_id).sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
   assignLive(byDate);
   const all = byDate.map(vm).sort((a, b) => ((PRI[a.state] ?? 9) - (PRI[b.state] ?? 9)) || (b.created_at || "").localeCompare(a.created_at || ""));
   const isOld = c => c.superseded_by || (PROG[c.program_id] || {}).superseded_by;

@@ -44,10 +44,12 @@ The program must print exactly one line of JSON and nothing else:
 If any criterion is not met, eligible is false and amount is 0."""
 
 
-def generate(program, subject, findings):
+def generate(program, subject, findings, previous_error=None):
     cited = [{k: f[k] for k in ("criterion", "value", "quote")} for f in findings]
     user = (f"Program: {program['name']}\nCited facts:\n{json.dumps(cited, indent=2)}\n\n"
             f"Subject inputs:\n{json.dumps(subject, indent=2)}")
+    if previous_error:
+        user += f"\n\nYour previous program crashed. Fix the bug and return the whole program again.\n{previous_error[-1500:]}"
     with span("compute.generate", kind="CHAIN", program_id=program["program_id"], model=FETCH_MODEL):
         return parse(FETCH_MODEL, SYSTEM, user, Program, effort="medium").code
 

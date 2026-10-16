@@ -1,6 +1,7 @@
 import tracing  # noqa: F401  (first: instruments anthropic before import)
 
 import json
+import os
 import uuid
 from pathlib import Path
 
@@ -12,8 +13,9 @@ ROOT = Path(__file__).parent
 
 
 def load_seed():
-    return (json.loads((ROOT / "seed/company.json").read_text()),
-            json.loads((ROOT / "seed/programs.json").read_text()))
+    seed = ROOT / os.getenv("SEED_DIR", "seed")  # e.g. SEED_DIR=seed/popwheels
+    return (json.loads((seed / "company.json").read_text()),
+            json.loads((seed / "programs.json").read_text()))
 
 
 def subjects_of(company):
@@ -93,6 +95,13 @@ def evaluate(run_id, company, program, subject, findings, status, supersedes=Non
         except LLMError as e:
             return store.create_claim(state="compute_error", reason=str(e), agent_inputs={"subject_id": sid}, **base)
         out, exit_code, raw, child_id = compute.run(code, claim_hint=f"{pid}/{sid}")
+        if out is None:  # one retry: the generated program crashed or printed bad JSON, hand the error back
+            store.log(run_id, "compute", f"{pid}/{sid}: program failed (exit {exit_code}), regenerating once")
+            try:
+                code = compute.generate(program, subj, findings, previous_error=raw)
+                out, exit_code, raw, child_id = compute.run(code, claim_hint=f"{pid}/{sid} retry")
+            except LLMError as e:
+                raw, exit_code = str(e), -1
         if out is None:
             c = store.create_claim(state="compute_error", reason=f"exit {exit_code}: {raw[-500:]}",
                                    agent_inputs={"subject_id": sid, "code": code, "child_id": child_id}, **base)

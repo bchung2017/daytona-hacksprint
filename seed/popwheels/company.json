@@ -1,0 +1,37 @@
+{
+  "company_id": "popwheels",
+  "name": "PopWheels",
+  "tagline": "Battery swap network for New York City's delivery e-bikes.",
+  "about": "PopWheels runs a network of battery swap cabinets across New York City so delivery riders can trade a drained e-bike battery for a charged one in seconds. Hardware, firmware and the rider app are built in-house in Brooklyn.",
+  "entity_type": "C corporation (assumed)",
+  "naics": "532289",
+  "location": {
+    "city": "Brooklyn",
+    "state": "NY",
+    "zip": "11201"
+  },
+  "fiscal_year": {
+    "start": "2025-01-01",
+    "end": "2025-12-31"
+  },
+  "employees": 25,
+  "annual_payroll": 2400000,
+  "annual_revenue": 1800000,
+  "is_restaurant": false,
+  "data_quality": "PLACEHOLDER FIGURES. Headcount, payroll, revenue, cabinet counts and costs are assumed so the pipeline can run. Replace with the real books before anything is filed.",
+  "recharging_property": {
+    "description": "Battery swap cabinets. Each cabinet stores and recharges removable lithium-ion e-bike batteries at a public curbside or storefront location in New York City.",
+    "units_placed_in_service_2025": 40,
+    "cost_per_unit": 11500,
+    "total_cost_2025": 460000,
+    "located_in_ny": true,
+    "first_placed_in_service": "2025-02-15",
+    "vehicles_served": "Class 1 and 2 electric bicycles with removable batteries. Not road-registered motor vehicles.",
+    "public_access": true
+  },
+  "production_property": {
+    "description": "No manufacturing or production equipment placed in service in 2025. Cabinets are assembled by a contract manufacturer.",
+    "total_cost_2025": 0
+  },
+  "subjects": []
+}

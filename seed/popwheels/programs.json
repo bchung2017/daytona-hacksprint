@@ -1,0 +1,31 @@
+[
+  {
+    "program_id": "nys-ev-recharging-property",
+    "name": "New York State Alternative Fuels and Electric Vehicle Recharging Property Credit",
+    "jurisdiction": "NY",
+    "level": "company",
+    "urls": [
+      "https://www.tax.ny.gov/pdf/current_forms/ct/ct637i.pdf"
+    ]
+  },
+  {
+    "program_id": "nys-investment-tax-credit",
+    "name": "New York State Investment Tax Credit",
+    "jurisdiction": "NY",
+    "level": "company",
+    "urls": [
+      "https://www.tax.ny.gov/pit/credits/investment_tax_credit.htm",
+      "https://www.tax.ny.gov/pdf/current_forms/ct/ct46i.pdf"
+    ]
+  },
+  {
+    "program_id": "nys-hire-a-veteran",
+    "name": "New York State Hire a Veteran Credit",
+    "jurisdiction": "NY",
+    "level": "subject",
+    "urls": [
+      "https://www.tax.ny.gov/pit/credits/hire_a_veteran_credit.htm",
+      "https://www.tax.ny.gov/pdf/current_forms/ct/ct643i.pdf"
+    ]
+  }
+]
