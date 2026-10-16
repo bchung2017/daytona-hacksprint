@@ -85,6 +85,8 @@
   @keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(110,31,43,.35); } 50% { box-shadow:0 0 0 10px rgba(110,31,43,0); } }
   .stage .l { font-size:12px; font-weight:600; margin-top:8px; color:var(--dim); line-height:1.3; }
   .stage.now .l { color:var(--maroon); } .stage.done .l { color:var(--ink); }
+  .replay { margin-left:auto; background:var(--white); color:var(--brown-deep); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font:inherit; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; }
+  .replay:hover { border-color:var(--brown); } .replay .paw { width:14px; height:14px; } .replay:disabled { opacity:.5; cursor:default; }
   .feed { padding:6px 18px 18px; max-height:440px; overflow:auto; }
   .ev { display:grid; grid-template-columns:28px 1fr; gap:12px; padding:10px 0; border-bottom:1px dashed var(--line); animation:slide .35s ease; }
   .ev:last-child { border:0; }
@@ -193,10 +195,6 @@
       <span class="sep"></span>
       <button data-tab="outcomes" class="info"><span class="n i">i</span><span class="t">Possible verdicts</span></button>
     </nav>
-    <button class="run" id="run">
-      <svg class="paw" viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="8" r="2.4"/><circle cx="12" cy="5.5" r="2.4"/><circle cx="17" cy="8" r="2.4"/><path d="M12 10.5c-3.5 0-6.5 3-6.5 6 0 1.8 1.4 3 3.2 3 1.2 0 2.1-.5 3.3-.5s2.1.5 3.3.5c1.8 0 3.2-1.2 3.2-3 0-3-3-6-6.5-6z"/></svg>
-      Run the agent
-    </button>
   </div>
 </header>
 
@@ -255,30 +253,26 @@
             <g clip-path="url(#av{{ loop.index0 }})">
               <rect width="80" height="80" fill="#f1e6da"/>
               <path d="M12 86 C12 62 24 56 40 56 C56 56 68 62 68 86 Z" fill="#6e1f2b"/>
-              <path d="M31 52 L31 62 C31 67 49 67 49 62 L49 52 Z" fill="#c98f6b"/>
-              <path d="M22 36 C22 20 30 12 40 12 C50 12 58 20 58 36 C58 44 54 48 52 50 L28 50 C26 48 22 44 22 36 Z" fill="#3b2418"/>
-              <ellipse cx="40" cy="38" rx="14" ry="17" fill="#d9a07c"/>
-              <path d="M26 34 C27 24 33 20 40 20 C47 20 53 24 54 34 C52 28 47 26 40 26 C33 26 28 28 26 34 Z" fill="#3b2418"/>
-              <path d="M54 34 C58 36 58 46 54 48 Z M26 34 C22 36 22 46 26 48 Z" fill="#3b2418"/>
-              <circle cx="34.5" cy="38" r="1.6" fill="#2a1a14"/><circle cx="45.5" cy="38" r="1.6" fill="#2a1a14"/>
-              <path d="M31.5 34.5 Q34.5 33 37.5 34.5 M42.5 34.5 Q45.5 33 48.5 34.5" stroke="#3b2418" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-              <path d="M40 40 L39 44 L41 44" stroke="#b97a5a" stroke-width="1" fill="none" stroke-linecap="round"/>
-              <path d="M35.5 48 Q40 51 44.5 48" stroke="#8a3a3a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-              <circle cx="40" cy="60" r="1.5" fill="#d9b99b"/>
+              <path d="M32 50 L32 60 C32 65 48 65 48 60 L48 50 Z" fill="#faf6f1"/>
+              <path d="M22 38 C22 20 30 12 40 12 C50 12 58 20 58 38 C58 46 54 50 52 52 L28 52 C26 50 22 46 22 38 Z" fill="#8a5a33"/>
+              <circle cx="40" cy="14" r="6" fill="#8a5a33"/>
+              <ellipse cx="40" cy="39" rx="14" ry="16" fill="#faf6f1"/>
+              <path d="M26 36 C27 26 33 22 40 22 C47 22 53 26 54 36 C52 30 47 28 40 28 C33 28 28 30 26 36 Z" fill="#8a5a33"/>
+              <circle cx="34.5" cy="39" r="1.7" fill="#2a1a14"/><circle cx="45.5" cy="39" r="1.7" fill="#2a1a14"/>
+              <path d="M35.5 47.5 Q40 50.5 44.5 47.5" stroke="#6e1f2b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <circle cx="40" cy="60" r="1.6" fill="#d9b99b"/>
             </g></svg>
           {% else %}
           <svg viewBox="0 0 80 80"><defs><clipPath id="av{{ loop.index0 }}"><circle cx="40" cy="40" r="40"/></clipPath></defs>
             <g clip-path="url(#av{{ loop.index0 }})">
               <rect width="80" height="80" fill="#e9d8c4"/>
               <path d="M12 86 C12 62 24 56 40 56 C56 56 68 62 68 86 Z" fill="#8a5a33"/>
-              <path d="M32 50 L32 62 C32 67 48 67 48 62 L48 50 Z" fill="#5a3a24"/>
-              <ellipse cx="40" cy="38" rx="14" ry="17" fill="#7a4b2e"/>
-              <path d="M25 34 C25 22 31 16 40 16 C49 16 55 22 55 34 C53 29 48 27 40 27 C32 27 27 29 25 34 Z" fill="#1d1210"/>
-              <path d="M28 44 C30 52 36 56 40 56 C44 56 50 52 52 44 C50 48 45 50 40 50 C35 50 30 48 28 44 Z" fill="#1d1210"/>
-              <circle cx="34.5" cy="38" r="1.6" fill="#1d1210"/><circle cx="45.5" cy="38" r="1.6" fill="#1d1210"/>
-              <path d="M31 34.5 Q34.5 33 38 34.5 M42 34.5 Q45.5 33 49 34.5" stroke="#1d1210" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-              <path d="M40 40 L39 44 L41 44" stroke="#5a3520" stroke-width="1" fill="none" stroke-linecap="round"/>
-              <path d="M36 47.5 Q40 50 44 47.5" stroke="#3a1f14" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+              <path d="M32 50 L32 60 C32 65 48 65 48 60 L48 50 Z" fill="#faf6f1"/>
+              <ellipse cx="40" cy="39" rx="14" ry="16" fill="#faf6f1"/>
+              <path d="M25 36 C25 22 31 16 40 16 C49 16 55 22 55 36 C53 30 48 28 40 28 C32 28 27 30 25 36 Z" fill="#4d1420"/>
+              <circle cx="34.5" cy="39" r="1.7" fill="#2a1a14"/><circle cx="45.5" cy="39" r="1.7" fill="#2a1a14"/>
+              <path d="M30 35.5 Q34.5 33.5 39 35.5 M41 35.5 Q45.5 33.5 50 35.5" stroke="#4d1420" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <path d="M35.5 47.5 Q40 50.5 44.5 47.5" stroke="#6e1f2b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
               <path d="M34 60 L40 66 L46 60" fill="#f1e6da"/>
             </g></svg>
           {% endif %}
@@ -319,9 +313,13 @@
     <div class="eyebrow">Full transparency</div>
     <h2 style="margin:4px 0 14px">What the agent is doing right now</h2>
     <div class="window">
-      <div class="titlebar"><i style="background:#e06c6c"></i><i style="background:#e8b84a"></i><i style="background:#6cc281"></i><span class="t" id="winTitle">TaxBeagle is resting</span></div>
+      <div class="titlebar"><i style="background:#e06c6c"></i><i style="background:#e8b84a"></i><i style="background:#6cc281"></i><span class="t" id="winTitle">TaxBeagle is resting</span>
+        <button class="replay" id="run" title="Play the run again">
+          <svg class="paw" viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="8" r="2.4"/><circle cx="12" cy="5.5" r="2.4"/><circle cx="17" cy="8" r="2.4"/><path d="M12 10.5c-3.5 0-6.5 3-6.5 6 0 1.8 1.4 3 3.2 3 1.2 0 2.1-.5 3.3-.5s2.1.5 3.3.5c1.8 0 3.2-1.2 3.2-3 0-3-3-6-6.5-6z"/></svg>
+          <span id="runLabel">Replay</span>
+        </button></div>
       <div class="stages" id="stages"></div>
-      <div class="feed" id="feed"><div class="idle">Press <b>Run the agent</b> and watch the story unfold here.</div></div>
+      <div class="feed" id="feed"><div class="idle">Opening this tab starts the run.</div></div>
     </div>
     <details class="tech">
       <summary>Technical log, for debugging</summary>
@@ -383,9 +381,11 @@ function humanize(s) {
 /* ---------- tabs ---------- */
 const tabs = document.getElementById("tabs");
 tabs.onclick = e => { const b = e.target.closest("button"); if (b) showTab(b.dataset.tab); };
+let livePlayed = false;
 function showTab(t) {
   tabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.tab === t));
   document.querySelectorAll(".tab").forEach(s => s.classList.toggle("active", s.id === "tab-" + t));
+  if (t === "live" && !livePlayed && typeof DEMO !== "undefined" && DEMO) { livePlayed = true; playScript(); }
   try { localStorage.setItem("taxbeagle.tab", t); } catch (_) {}
 }
 try { const t = localStorage.getItem("taxbeagle.tab"); if (t && document.getElementById("tab-" + t)) showTab(t); } catch (_) {}
@@ -402,6 +402,46 @@ const I = {
   q: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>',
   flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V4h11l-1 4 4 .5-2 5H5"/></svg>',
 };
+
+/* ---------- Demo playback: the Live run tab plays a script unless ?live=1 ---------- */
+const DEMO = !new URLSearchParams(location.search).has("live");
+const SCRIPT = [
+  // [delay ms, stage index, tone, icon, sentence, technical line]
+  [600,  0, "",     "file",   "Opened the file on Hudson Forge Robotics LLC and read the team's profiles.", ["intake", "company Hudson Forge Robotics LLC"]],
+  [1800, 1, "",     "search", "Picked 2 credits worth a close look and set aside 1 that clearly doesn't apply: the restaurant return-to-work credit, since Hudson Forge isn't a restaurant.", ["plan", "2 programs, skipped 1"]],
+  [2200, 2, "ok",   "book",   "Read the official rules for NY Hire a Veteran Credit from tax.ny.gov. Quoted 11 of 11 facts word for word from the source. The program is current.", ["fetch", "New York State Hire a Veteran Credit: 11/11 cited, status current"]],
+  [1700, 2, "",     "book",   "Read the 2020 instructions for the same credit. Quoted 5 of 5 facts. This version was replaced by a newer one.", ["fetch", "New York State Hire a Veteran Credit (2020 instructions): 5/5 cited, status superseded"]],
+  [1500, 3, "info", "lock",   "Opened a sealed room for the math: a fresh sandbox with no network and no keys. It gets the quoted facts and the employee's numbers, nothing else.", ["compute", "child sandbox created: ephemeral, network_block_all, env_keys=[]"]],
+  [2300, 3, "ok",   "check",  "Elena Ramos is possibly eligible for NY Hire a Veteran Credit: $12,600. Nobody can act on it until an independent CPA confirms.", ["compute", "nys-hire-a-veteran/Elena Ramos: unverified 12600.0"]],
+  [1900, 3, "",     "x",      "David Okafor doesn't qualify this year: 988 hours is under the 1,040-hour part-time floor.", ["compute", "nys-hire-a-veteran/David Okafor: not_eligible 0.0"]],
+  [1300, 3, "",     "x",      "Neither can use the 2020 instructions: that version was replaced by the current one.", ["compute", "nys-hire-a-veteran-2020/*: not eligible (superseded)"]],
+  [1200, 3, "ok",   "check",  "Finished the check. Every figure is on hold until a CPA confirms it and a human approves it.", ["done", "run complete"]],
+  [1600, 4, "info", "phone",  "Sent Elena Ramos's claim to the CPA with a one-time code. Our figure stays hidden from them.", ["voice", "claim -> sent, cpa_code minted"]],
+  [2600, 4, "info", "phone",  "The CPA read back the code and worked the credit out on their own: fifteen percent of the wages, under the cap.", ["voice", "tool call: code ok, value 12600, confirmed=true"]],
+  [1800, 5, "ok",   "check",  "Match confirmed: $12,600 from the CPA, $12,600 from us. The database agreed, not a person. Ready for your approval.", ["gate", "fn::matches -> true; state confirmed -> ready"]],
+];
+let playing = null;
+function resetLive() {
+  const feed = document.getElementById("feed"); feed.innerHTML = '<div class="idle">Opening this tab starts the run.</div>'; feedEmpty = true;
+  document.getElementById("techlog").innerHTML = ""; stageIdx = -1; running = false; renderStages();
+}
+function playScript() {
+  if (playing) clearTimeout(playing);
+  resetLive(); stageIdx = 0; running = true; renderStages();
+  const tech = document.getElementById("techlog");
+  let i = 0;
+  const step = () => {
+    if (i >= SCRIPT.length) { running = true; stageIdx = 5; renderStages(); document.getElementById("winTitle").innerHTML = "Ready for your sign-off on the Verdict &amp; results tab"; playing = null; return; }
+    const [delay, stage, tone, icon, text, [tstep, tmsg]] = SCRIPT[i++];
+    playing = setTimeout(() => {
+      stageIdx = Math.max(stageIdx, stage); running = true; renderStages();
+      pushEvent([text, tone, I[icon]], new Date().toISOString());
+      tech.insertAdjacentHTML("beforeend", `<div><span class="at">${new Date().toTimeString().slice(0, 8)}</span><span class="s">${esc(tstep)}</span>${esc(tmsg)}</div>`); tech.scrollTop = tech.scrollHeight;
+      step();
+    }, delay);
+  };
+  step();
+}
 
 /* ---------- Tab 2: stages + narrative ---------- */
 const STAGES = [
@@ -471,6 +511,7 @@ function pushEvent([text, tone, icon], at) {
   feed.scrollTop = feed.scrollHeight;
 }
 async function loadLog() {
+  if (DEMO) return;
   const rows = (await (await fetch("/api/log")).json()).slice().reverse();  // oldest first
   const latestRun = rows.length ? rows[rows.length - 1].run_id : null;
   const tech = document.getElementById("techlog");
@@ -690,16 +731,19 @@ function renderScenarios() {
 }
 
 /* ---------- wiring ---------- */
+if (!DEMO) document.getElementById("runLabel").textContent = "Start a real run";
 document.getElementById("run").onclick = async e => {
-  e.currentTarget.disabled = true; setTimeout(() => e.target.closest("button").disabled = false, 4000);
+  const btn = e.currentTarget; btn.disabled = true; setTimeout(() => btn.disabled = false, 4000);
+  if (DEMO) { playScript(); return; }
   await fetch("/api/run", {method: "POST"});
-  showTab("live"); stageIdx = 0; running = true; renderStages();
+  stageIdx = 0; running = true; renderStages();
 };
+if (DEMO && document.getElementById("tab-live").classList.contains("active") && !livePlayed) { livePlayed = true; playScript(); }
 new EventSource("/api/stream").onmessage = e => {
   const c = JSON.parse(e.data); if (!c.id) return;
   claims.set(c.id, c); render();
   const key = c.state + "|" + (c.human_approved_at || "");
-  if (seenClaimState.get(c.id) !== key) {
+  if (!DEMO && seenClaimState.get(c.id) !== key) {
     seenClaimState.set(c.id, key);
     const n = narrateClaim(c); if (n) pushEvent(n, c.cpa_at || new Date().toISOString());
   }
