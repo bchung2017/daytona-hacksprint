@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fetch — Incentive Agent</title>
+<title>TaxBeagle — Incentive Agent</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -170,7 +170,7 @@
         <path d="M13 50 Q32 44 51 50 L48 58 Q32 54 16 58 Z" fill="#6e1f2b"/>
         <circle cx="32" cy="55" r="2.2" fill="#d9b99b"/>
       </svg>
-      <div><h1>Fetch</h1><div class="tag">Finds every credit. Brings back the receipts.</div></div>
+      <div><h1>TaxBeagle</h1><div class="tag">Sniffs out every credit. Brings back the receipts.</div></div>
     </div>
     <nav id="tabs">
       <button data-tab="company" class="active"><span class="n">1</span><span class="t">Company</span></button>
@@ -250,7 +250,7 @@
     <div class="eyebrow">Full transparency</div>
     <h2 style="margin:4px 0 14px">What the agent is doing right now</h2>
     <div class="window">
-      <div class="titlebar"><i style="background:#e06c6c"></i><i style="background:#e8b84a"></i><i style="background:#6cc281"></i><span class="t" id="winTitle">Fetch is resting</span></div>
+      <div class="titlebar"><i style="background:#e06c6c"></i><i style="background:#e8b84a"></i><i style="background:#6cc281"></i><span class="t" id="winTitle">TaxBeagle is resting</span></div>
       <div class="stages" id="stages"></div>
       <div class="feed" id="feed"><div class="idle">Press <b>Run the agent</b> and watch the story unfold here.</div></div>
     </div>
@@ -317,9 +317,9 @@ tabs.onclick = e => { const b = e.target.closest("button"); if (b) showTab(b.dat
 function showTab(t) {
   tabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.tab === t));
   document.querySelectorAll(".tab").forEach(s => s.classList.toggle("active", s.id === "tab-" + t));
-  try { localStorage.setItem("fetch.tab", t); } catch (_) {}
+  try { localStorage.setItem("taxbeagle.tab", t); } catch (_) {}
 }
-try { const t = localStorage.getItem("fetch.tab"); if (t && document.getElementById("tab-" + t)) showTab(t); } catch (_) {}
+try { const t = localStorage.getItem("taxbeagle.tab"); if (t && document.getElementById("tab-" + t)) showTab(t); } catch (_) {}
 
 /* ---------- icons ---------- */
 const I = {
@@ -344,7 +344,7 @@ function renderStages() {
   document.getElementById("stages").innerHTML = STAGES.map(([k, l, ic], i) =>
     `<div class="stage ${i < stageIdx ? "done" : i === stageIdx && running ? "now" : i === stageIdx ? "done" : ""}"><div class="dot">${ic}</div><div class="l">${l}</div></div>`).join("");
   const title = document.getElementById("winTitle");
-  title.innerHTML = running && stageIdx >= 0 ? `${STAGES[stageIdx][1]}<span class="typing"><i></i><i></i><i></i></span>` : stageIdx >= 0 ? "Finished. Nothing moves without a human." : "Fetch is resting";
+  title.innerHTML = running && stageIdx >= 0 ? `${STAGES[stageIdx][1]}<span class="typing"><i></i><i></i><i></i></span>` : stageIdx >= 0 ? "Finished. Nothing moves without a human." : "TaxBeagle is resting";
 }
 
 /* Technical log row -> plain English sentence. */

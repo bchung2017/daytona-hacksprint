@@ -1,4 +1,4 @@
-# Incentive Agent
+# TaxBeagle (Incentive Agent)
 
 Finds tax credits for a seeded company, cites every eligibility fact verbatim from the official source,
 computes the credit in a keyless, network-blocked Daytona child sandbox, gets an independent figure from a
