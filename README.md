@@ -14,6 +14,25 @@ outbound: Anthropic, Anchor, Arize OTLP, ElevenLabs, SurrealDB Agent Memory (opt
 inbound:  CPA browser → /cpa (ElevenLabs widget); ElevenLabs → /api/cpa_tool, /api/elevenlabs/postcall
 ```
 
+# Post-hacksprint notes
+
+Written after the Daytona HackSprint NYC demo on 2026-10-16. One thing didn't make it onto the screen:
+
+<img width="1595" height="642" alt="image" src="https://github.com/user-attachments/assets/e0e85589-da7f-4c04-b66f-b01b6ec21847" />
+
+Small woopsie on our end. Arize tracing was fully wired across the pipeline and our checks said it was exporting, but the dashboard came up empty. Turns out we pointed the HTTP exporter at the gRPC address, which happily returns 200 and quietly drops everything. We caught it late and chose not to redeploy inside the time limit. One-line fix, and the next run should be traced properly instead of empty data points.
+
+## Arize tracing exported nothing
+
+TaxBeagle instruments the whole pipeline with OpenTelemetry using Arize's OpenInference conventions:
+
+| Span | Kind | Where |
+| --- | --- | --- |
+| `run` | AGENT | `agent.py` |
+| `plan`, `fetch.extract`, `evaluate`, `compute.generate`, `store.*` | CHAIN | `steps/` |
+| `fetch.page` (Anchor), `compute.child_run` (Daytona child), `voice.tool_call` (ElevenLabs) | TOOL | `steps/` |
+| `eval.*` with a `passed` attribute | EVALUATOR | `evals/run.py` |
+
 ## Runbook
 
 ```bash
