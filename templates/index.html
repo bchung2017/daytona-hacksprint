@@ -3,110 +3,525 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Incentive Agent</title>
+<title>Fetch — Incentive Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0f1115; --panel:#171a21; --line:#262b36; --text:#e6e8ee; --dim:#8b93a7; --accent:#6aa8ff;
-          --ok:#3ecf8e; --warn:#f5b84b; --bad:#ff6b6b; --info:#9b8cff; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.45 ui-sans-serif, system-ui, sans-serif; }
-  header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--line); }
-  h1 { font-size:16px; margin:0; } h2 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); margin:0 0 10px; }
-  main { display:grid; grid-template-columns: 280px minmax(260px, 1fr) minmax(380px, 1.4fr); gap:16px; padding:16px; height:calc(100vh - 56px); }
-  section { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; overflow:auto; }
-  button { background:var(--accent); color:#06101f; border:0; border-radius:6px; padding:7px 12px; font-weight:600; cursor:pointer; }
-  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
-  dl { margin:0; display:grid; grid-template-columns:auto 1fr; gap:4px 10px; } dt { color:var(--dim); } dd { margin:0; }
-  .subj { border-top:1px solid var(--line); margin-top:10px; padding-top:10px; }
-  .log div { padding:4px 0; border-bottom:1px solid var(--line); font-family:ui-monospace, monospace; font-size:12px; }
-  .log .step { color:var(--accent); margin-right:6px; }
-  .claim { border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:10px; }
-  .claim.superseded { opacity:.45; }
-  .row { display:flex; align-items:center; gap:8px; justify-content:space-between; }
-  .chip { font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--line); }
-  .chip.ready,.chip.approved,.chip.confirmed { background:var(--ok); color:#04170e; }
-  .chip.sent,.chip.unverified { background:var(--info); color:#0d0820; }
-  .chip.needs-info { background:var(--warn); color:#1f1402; }
-  .chip.rejected,.chip.compute_error,.chip.uncited { background:var(--bad); color:#200606; }
-  .chip.not_eligible { background:#3a4050; }
-  .vals { display:flex; gap:16px; margin:6px 0; font-variant-numeric: tabular-nums; }
-  .vals b { font-size:16px; } .dim { color:var(--dim); font-size:12px; }
-  details { margin-top:6px; } summary { cursor:pointer; color:var(--dim); font-size:12px; }
-  blockquote { margin:6px 0; padding:4px 10px; border-left:3px solid var(--ok); color:#cfd5e3; font-size:12px; }
-  blockquote.miss { border-color:var(--bad); }
-  @media (max-width: 900px) { main { grid-template-columns:1fr; height:auto; } }
+  :root {
+    --maroon:#6e1f2b; --maroon-deep:#4d1420; --maroon-soft:#f3e4e6;
+    --brown:#8a5a33; --brown-deep:#5c3a1e; --tan:#d9b99b; --tan-soft:#f1e6da;
+    --cream:#faf6f1; --white:#ffffff; --ink:#2a1a14; --dim:#7a6a60; --line:#e9ddd2;
+    --ok:#2e7d4f; --ok-soft:#e3f2e8; --warn:#b8862b; --warn-soft:#fbf0d9; --bad:#a3262f; --bad-soft:#f8e1e2; --info:#5a4a8a; --info-soft:#ece7f6;
+    --r:14px; --shadow:0 1px 2px rgba(42,26,20,.06), 0 8px 24px -12px rgba(42,26,20,.18);
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--cream); color:var(--ink); font:15px/1.5 Inter, ui-sans-serif, system-ui, sans-serif; }
+  a { color:var(--maroon); }
+  h1,h2,h3 { font-family:Fraunces, Georgia, serif; margin:0; letter-spacing:-.01em; }
+  h1 { font-size:22px; font-weight:800; } h2 { font-size:20px; font-weight:800; } h3 { font-size:16px; font-weight:700; }
+  .eyebrow { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--brown); }
+  .dim { color:var(--dim); } .small { font-size:13px; } .mono { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .num { font-variant-numeric:tabular-nums; }
+
+  header { background:var(--white); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  .bar { max-width:1180px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; gap:16px; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .brand svg { width:44px; height:44px; }
+  .brand .tag { font-size:12px; color:var(--dim); margin-top:-2px; }
+  nav { margin-left:auto; display:flex; gap:4px; background:var(--cream); padding:4px; border-radius:999px; border:1px solid var(--line); }
+  nav button { background:transparent; color:var(--dim); border:0; border-radius:999px; padding:8px 14px; font:inherit; font-weight:600; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:7px; }
+  nav button .n { width:20px; height:20px; border-radius:50%; background:var(--tan-soft); color:var(--brown-deep); display:grid; place-items:center; font-size:11px; font-weight:800; }
+  nav button.active { background:var(--maroon); color:var(--white); box-shadow:var(--shadow); }
+  nav button.active .n { background:rgba(255,255,255,.2); color:var(--white); }
+  .run { background:var(--brown); color:var(--white); border:0; border-radius:10px; padding:10px 16px; font:inherit; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; }
+  .run:hover { background:var(--brown-deep); } .run:disabled { opacity:.6; cursor:default; }
+  .run .paw { width:16px; height:16px; }
+
+  main { max-width:1180px; margin:0 auto; padding:24px 20px 60px; }
+  .tab { display:none; } .tab.active { display:block; animation:fade .25s ease; }
+  @keyframes fade { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+  .card { background:var(--white); border:1px solid var(--line); border-radius:var(--r); padding:20px; box-shadow:var(--shadow); }
+  .grid { display:grid; gap:16px; }
+  .g2 { grid-template-columns:repeat(2, minmax(0,1fr)); } .g3 { grid-template-columns:repeat(3, minmax(0,1fr)); }
+  @media (max-width: 860px) { .g2, .g3 { grid-template-columns:1fr; } nav button span.t { display:none; } .bar { flex-wrap:wrap; } }
+
+  /* ---- Tab 1 ---- */
+  .hero { background:linear-gradient(135deg, var(--maroon) 0%, var(--maroon-deep) 100%); color:var(--white); border-radius:var(--r); padding:28px; display:grid; grid-template-columns:1fr auto; gap:20px; align-items:center; }
+  .hero h2 { color:var(--white); font-size:28px; } .hero p { margin:8px 0 0; color:rgba(255,255,255,.82); max-width:62ch; }
+  .hero .eyebrow { color:var(--tan); }
+  .facts { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-top:16px; }
+  .fact { background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .fact .k { font-size:12px; color:var(--dim); } .fact .v { font-weight:700; font-size:17px; margin-top:2px; }
+  .person { display:grid; grid-template-columns:56px 1fr; gap:14px; }
+  .avatar { width:56px; height:56px; border-radius:50%; background:var(--tan-soft); color:var(--brown-deep); display:grid; place-items:center; font:800 18px Fraunces, serif; border:2px solid var(--tan); }
+  .person .role { color:var(--dim); font-size:13px; }
+  .badges { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; background:var(--maroon-soft); color:var(--maroon-deep); }
+  .badge.brown { background:var(--tan-soft); color:var(--brown-deep); }
+  dl { margin:12px 0 0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:14px; } dt { color:var(--dim); } dd { margin:0; font-weight:600; }
+  .programs li { padding:10px 0; border-bottom:1px solid var(--line); } .programs li:last-child { border:0; }
+
+  /* ---- Tab 2 ---- */
+  .window { background:var(--white); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; }
+  .titlebar { display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--cream); border-bottom:1px solid var(--line); }
+  .titlebar i { width:11px; height:11px; border-radius:50%; display:inline-block; }
+  .titlebar .t { margin-left:8px; font-weight:600; font-size:13px; color:var(--dim); }
+  .stages { display:grid; grid-template-columns:repeat(6, 1fr); gap:0; padding:22px 18px 10px; position:relative; }
+  .stage { text-align:center; position:relative; padding:0 6px; }
+  .stage::before { content:""; position:absolute; top:19px; left:-50%; width:100%; height:3px; background:var(--line); z-index:0; }
+  .stage:first-child::before { display:none; }
+  .stage.done::before { background:var(--brown); }
+  .dot { width:40px; height:40px; border-radius:50%; margin:0 auto; display:grid; place-items:center; background:var(--white); border:3px solid var(--line); position:relative; z-index:1; color:var(--dim); }
+  .dot svg { width:20px; height:20px; }
+  .stage.done .dot { background:var(--brown); border-color:var(--brown); color:var(--white); }
+  .stage.now .dot { border-color:var(--maroon); color:var(--maroon); animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(110,31,43,.35); } 50% { box-shadow:0 0 0 10px rgba(110,31,43,0); } }
+  .stage .l { font-size:12px; font-weight:600; margin-top:8px; color:var(--dim); line-height:1.3; }
+  .stage.now .l { color:var(--maroon); } .stage.done .l { color:var(--ink); }
+  .feed { padding:6px 18px 18px; max-height:440px; overflow:auto; }
+  .ev { display:grid; grid-template-columns:28px 1fr; gap:12px; padding:10px 0; border-bottom:1px dashed var(--line); animation:slide .35s ease; }
+  .ev:last-child { border:0; }
+  @keyframes slide { from { opacity:0; transform:translateX(-6px); } to { opacity:1; transform:none; } }
+  .ev .ic { width:28px; height:28px; border-radius:8px; display:grid; place-items:center; background:var(--tan-soft); color:var(--brown-deep); }
+  .ev .ic svg { width:16px; height:16px; }
+  .ev.ok .ic { background:var(--ok-soft); color:var(--ok); } .ev.bad .ic { background:var(--bad-soft); color:var(--bad); }
+  .ev.warn .ic { background:var(--warn-soft); color:var(--warn); } .ev.info .ic { background:var(--info-soft); color:var(--info); }
+  .ev .when { font-size:11px; color:var(--dim); margin-top:2px; }
+  .idle { padding:30px 18px; text-align:center; color:var(--dim); }
+  .typing { display:inline-flex; gap:4px; margin-left:6px; vertical-align:middle; }
+  .typing i { width:6px; height:6px; border-radius:50%; background:var(--maroon); animation:blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay:.2s; } .typing i:nth-child(3) { animation-delay:.4s; }
+  @keyframes blink { 0%,80%,100% { opacity:.2; } 40% { opacity:1; } }
+  details.tech { margin-top:16px; }
+  details.tech summary { cursor:pointer; color:var(--dim); font-size:13px; font-weight:600; padding:10px 14px; background:var(--white); border:1px solid var(--line); border-radius:10px; list-style:none; display:flex; align-items:center; gap:8px; }
+  details.tech[open] summary { border-radius:10px 10px 0 0; }
+  details.tech summary::-webkit-details-marker { display:none; }
+  details.tech summary::before { content:"▸"; transition:transform .15s; } details.tech[open] summary::before { transform:rotate(90deg); }
+  .techlog { background:#1d1512; color:#e9dccf; font:12px/1.55 ui-monospace, Menlo, monospace; padding:12px 14px; border-radius:0 0 10px 10px; max-height:260px; overflow:auto; }
+  .techlog div { white-space:pre-wrap; word-break:break-word; } .techlog .s { color:var(--tan); margin-right:8px; } .techlog .at { color:#8f7f72; margin-right:8px; }
+
+  /* ---- Tab 3 ---- */
+  .claim { display:grid; grid-template-columns:minmax(260px, 2fr) minmax(300px, 3fr); border:1px solid var(--line); border-radius:var(--r); background:var(--white); box-shadow:var(--shadow); overflow:hidden; margin-bottom:18px; }
+  .claim.superseded { opacity:.55; }
+  @media (max-width: 860px) { .claim { grid-template-columns:1fr; } }
+  .verdict { padding:22px; background:var(--cream); border-right:1px solid var(--line); display:flex; flex-direction:column; gap:12px; }
+  .results { padding:22px; }
+  .status { display:inline-flex; align-items:center; gap:8px; font-weight:800; font-size:15px; padding:8px 14px; border-radius:10px; width:fit-content; }
+  .status.ok { background:var(--ok-soft); color:var(--ok); } .status.bad { background:var(--bad-soft); color:var(--bad); }
+  .status.warn { background:var(--warn-soft); color:var(--warn); } .status.info { background:var(--info-soft); color:var(--info); } .status.neutral { background:var(--tan-soft); color:var(--brown-deep); }
+  .who { font-family:Fraunces, serif; font-size:20px; font-weight:800; line-height:1.2; } .who small { display:block; font:500 13px Inter, sans-serif; color:var(--dim); margin-top:4px; }
+  .actions { margin-top:auto; display:flex; gap:8px; flex-wrap:wrap; }
+  .btn { background:var(--maroon); color:var(--white); border:0; border-radius:9px; padding:9px 14px; font:inherit; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; }
+  .btn.ghost { background:transparent; color:var(--maroon); border:1.5px solid var(--maroon); }
+  .btn.ok { background:var(--ok); }
+  .figures { display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:stretch; }
+  .fig { background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .fig .k { font-size:12px; color:var(--dim); } .fig .v { font:800 24px Fraunces, serif; margin-top:2px; }
+  .fig.cpa .v { color:var(--brown-deep); }
+  .match { display:grid; place-items:center; padding:0 10px; font-size:12px; font-weight:700; text-align:center; min-width:80px; border-radius:10px; }
+  .match.yes { background:var(--ok-soft); color:var(--ok); } .match.no { background:var(--bad-soft); color:var(--bad); } .match.wait { background:var(--tan-soft); color:var(--brown-deep); }
+  .kv { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:8px; margin-top:14px; }
+  .kv div { font-size:13px; } .kv b { display:block; font-size:14px; }
+  .cites { margin-top:14px; } .cites summary { cursor:pointer; font-weight:600; font-size:13px; color:var(--maroon); }
+  blockquote { margin:10px 0; padding:8px 12px; border-left:3px solid var(--brown); background:var(--cream); border-radius:0 8px 8px 0; font-size:13px; }
+  blockquote.miss { border-color:var(--bad); } blockquote .c { font-weight:700; } blockquote .q { font-style:italic; margin:4px 0; color:#4a3a30; } blockquote a { font-size:12px; word-break:break-all; }
+  .empty { padding:40px; text-align:center; color:var(--dim); }
+  .checks { list-style:none; margin:8px 0 0; padding:0; display:grid; gap:6px; }
+  .checks li { display:grid; grid-template-columns:24px 1fr; gap:10px; padding:8px 10px; border-radius:8px; background:var(--cream); border:1px solid var(--line); font-size:13px; }
+  .checks .ic { width:24px; height:24px; border-radius:6px; display:grid; place-items:center; background:var(--tan-soft); color:var(--brown-deep); }
+  .checks .ic svg { width:14px; height:14px; }
+  .checks li.ok .ic { background:var(--ok-soft); color:var(--ok); } .checks li.bad .ic { background:var(--bad-soft); color:var(--bad); } .checks li.warn .ic { background:var(--warn-soft); color:var(--warn); }
+  .checks .vd { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--dim); margin-left:4px; }
+  .checks li.ok .vd { color:var(--ok); } .checks li.bad .vd { color:var(--bad); }
+  .checks .d { color:#4a3a30; margin-top:2px; }
+  .steps { list-style:none; margin:0; padding:0; display:flex; gap:6px; }
+  .steps li { flex:1; display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--dim); padding:6px 8px; border-radius:8px; background:var(--white); border:1px solid var(--line); }
+  .steps li i { width:18px; height:18px; border-radius:50%; display:grid; place-items:center; font-style:normal; font-size:11px; font-weight:800; background:var(--tan-soft); color:var(--brown-deep); }
+  .steps li.done { color:var(--ok); border-color:var(--ok-soft); } .steps li.done i { background:var(--ok); color:#fff; }
+  .steps li.next { color:var(--maroon); border-color:var(--maroon); } .steps li.next i { background:var(--maroon); color:#fff; }
+
+  /* ---- Tab 4 ---- */
+  .scen { display:flex; flex-direction:column; gap:12px; }
+  .scen .head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .flow { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:12px; font-weight:600; }
+  .flow span { padding:4px 9px; border-radius:999px; background:var(--tan-soft); color:var(--brown-deep); }
+  .flow span.ok { background:var(--ok-soft); color:var(--ok); } .flow span.bad { background:var(--bad-soft); color:var(--bad); } .flow span.warn { background:var(--warn-soft); color:var(--warn); }
+  .flow i { color:var(--dim); font-style:normal; }
+  .seen { font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; background:var(--maroon); color:var(--white); }
+  .quote { font-style:italic; color:#4a3a30; background:var(--cream); border-radius:8px; padding:10px 12px; font-size:13px; }
+  .more li { padding:8px 0; border-bottom:1px solid var(--line); font-size:14px; } .more li:last-child { border:0; } .more b { color:var(--maroon-deep); }
 </style>
 </head>
 <body>
 <header>
-  <h1>Incentive Agent</h1>
-  <button id="run">Run agent</button>
-</header>
-<main>
-  <section>
-    <h2>Company</h2>
-    <dl>
-      <dt>Name</dt><dd>{{ company.name }}</dd>
-      <dt>NAICS</dt><dd>{{ company.naics }}</dd>
-      <dt>Location</dt><dd>{{ company.location.city }}, {{ company.location.state }}</dd>
-      <dt>Employees</dt><dd>{{ company.employees }}</dd>
-      <dt>Payroll</dt><dd>${{ "{:,}".format(company.annual_payroll) }}</dd>
-      <dt>Revenue</dt><dd>${{ "{:,}".format(company.annual_revenue) }}</dd>
-      <dt>FY</dt><dd>{{ company.fiscal_year.start }} to {{ company.fiscal_year.end }}</dd>
-    </dl>
-    {% for s in company.subjects %}
-    <div class="subj">
-      <div><b>{{ s.subject_id }}</b> <span class="dim">{{ s.description }}</span></div>
-      <dl>
-        <dt>Hired</dt><dd>{{ s.hire_date }}</dd>
-        <dt>Hours (12 mo)</dt><dd>{{ "{:,}".format(s.hours_first_12_months) }}</dd>
-        <dt>Wages (12 mo)</dt><dd>${{ "{:,}".format(s.wages_first_12_months) }}</dd>
-      </dl>
+  <div class="bar">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <!-- corgi mark: brown coat, white blaze, maroon bandana -->
+        <path d="M14 30 L8 10 L26 20 Z" fill="#8a5a33"/><path d="M50 30 L56 10 L38 20 Z" fill="#8a5a33"/>
+        <path d="M12 28 L9 14 L22 22 Z" fill="#d9b99b"/><path d="M52 28 L55 14 L42 22 Z" fill="#d9b99b"/>
+        <ellipse cx="32" cy="34" rx="21" ry="19" fill="#8a5a33"/>
+        <path d="M32 15 C27 20 25 28 25 36 C25 44 28 50 32 53 C36 50 39 44 39 36 C39 28 37 20 32 15 Z" fill="#ffffff"/>
+        <ellipse cx="32" cy="43" rx="10" ry="8" fill="#ffffff"/>
+        <circle cx="24" cy="33" r="2.6" fill="#2a1a14"/><circle cx="40" cy="33" r="2.6" fill="#2a1a14"/>
+        <circle cx="25" cy="32.2" r=".8" fill="#fff"/><circle cx="41" cy="32.2" r=".8" fill="#fff"/>
+        <path d="M28.5 41 Q32 38.5 35.5 41 Q32 45 28.5 41 Z" fill="#2a1a14"/>
+        <path d="M32 44 L32 47 M32 47 Q29 50 27 48 M32 47 Q35 50 37 48" stroke="#2a1a14" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+        <path d="M13 50 Q32 44 51 50 L48 58 Q32 54 16 58 Z" fill="#6e1f2b"/>
+        <circle cx="32" cy="55" r="2.2" fill="#d9b99b"/>
+      </svg>
+      <div><h1>Fetch</h1><div class="tag">Finds every credit. Brings back the receipts.</div></div>
     </div>
-    {% endfor %}
-    <h2 style="margin-top:16px">Candidate programs</h2>
-    {% for p in programs %}<div class="dim">{{ p.name }}</div>{% endfor %}
+    <nav id="tabs">
+      <button data-tab="company" class="active"><span class="n">1</span><span class="t">Company</span></button>
+      <button data-tab="live"><span class="n">2</span><span class="t">Live run</span></button>
+      <button data-tab="results"><span class="n">3</span><span class="t">Verdict &amp; results</span></button>
+      <button data-tab="outcomes"><span class="n">4</span><span class="t">What the CPA can say</span></button>
+    </nav>
+    <button class="run" id="run">
+      <svg class="paw" viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="8" r="2.4"/><circle cx="12" cy="5.5" r="2.4"/><circle cx="17" cy="8" r="2.4"/><path d="M12 10.5c-3.5 0-6.5 3-6.5 6 0 1.8 1.4 3 3.2 3 1.2 0 2.1-.5 3.3-.5s2.1.5 3.3.5c1.8 0 3.2-1.2 3.2-3 0-3-3-6-6.5-6z"/></svg>
+      Run the agent
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- ================= TAB 1 ================= -->
+  <section class="tab active" id="tab-company">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">The business</div>
+        <h2>{{ company.name }}</h2>
+        <p>{{ company.about or company.tagline }}</p>
+      </div>
+      <div class="facts" style="margin:0; min-width:260px">
+        <div class="fact" style="background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.2); color:#fff"><div class="k" style="color:var(--tan)">Based in</div><div class="v">{{ company.location.city }}, {{ company.location.state }}</div></div>
+        <div class="fact" style="background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.2); color:#fff"><div class="k" style="color:var(--tan)">Tax year</div><div class="v">{{ company.fiscal_year.start[:4] }}</div></div>
+      </div>
+    </div>
+
+    <div class="facts">
+      <div class="fact"><div class="k">Team size</div><div class="v num">{{ company.employees }} people</div></div>
+      <div class="fact"><div class="k">Annual payroll</div><div class="v num">${{ "{:,}".format(company.annual_payroll) }}</div></div>
+      <div class="fact"><div class="k">Annual revenue</div><div class="v num">${{ "{:,}".format(company.annual_revenue) }}</div></div>
+      <div class="fact"><div class="k">Structure</div><div class="v">{{ company.entity_type }}</div></div>
+      <div class="fact"><div class="k">Industry code</div><div class="v num">NAICS {{ company.naics }}</div></div>
+    </div>
+
+    <div style="margin-top:28px" class="eyebrow">People we're checking</div>
+    <h2 style="margin:4px 0 14px">Employee profiles</h2>
+    <div class="grid g2">
+      {% for s in company.subjects %}
+      <div class="card person">
+        <div class="avatar">{{ s.name.split()[0][0] }}{{ s.name.split()[-1][0] }}</div>
+        <div>
+          <h3>{{ s.name }}</h3>
+          <div class="role">{{ s.role }} · {{ s.description }}</div>
+          <div class="badges">
+            <span class="badge">Veteran</span>
+            {% if s.disabled_veteran %}<span class="badge">Disabled veteran</span>{% endif %}
+            {% if s.prior_180_day_affidavit_signed %}<span class="badge brown">Affidavit on file</span>{% endif %}
+            <span class="badge brown">Works in {{ s.work_location_state }}</span>
+          </div>
+          <dl>
+            <dt>Start date</dt><dd>{{ s.hire_date }}</dd>
+            <dt>Hours, first year</dt><dd class="num">{{ "{:,}".format(s.hours_first_12_months) }}</dd>
+            <dt>Wages, first year</dt><dd class="num">${{ "{:,}".format(s.wages_first_12_months) }}</dd>
+          </dl>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div style="margin-top:28px" class="eyebrow">On the list</div>
+    <h2 style="margin:4px 0 14px">Credits we'll look into</h2>
+    <div class="card">
+      <ul class="programs" style="list-style:none; margin:0; padding:0">
+        {% for p in programs %}
+        <li><b>{{ p.name }}</b>{% if p.superseded_by %} <span class="badge brown">older version</span>{% endif %}
+          <div class="small dim">Official sources: {% for u in p.urls %}<a href="{{ u }}" target="_blank" rel="noopener">{{ u.split('/')[-1] }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</div></li>
+        {% endfor %}
+      </ul>
+    </div>
   </section>
-  <section>
-    <h2>Run log</h2>
-    <div class="log" id="log"></div>
+
+  <!-- ================= TAB 2 ================= -->
+  <section class="tab" id="tab-live">
+    <div class="eyebrow">Full transparency</div>
+    <h2 style="margin:4px 0 14px">What the agent is doing right now</h2>
+    <div class="window">
+      <div class="titlebar"><i style="background:#e06c6c"></i><i style="background:#e8b84a"></i><i style="background:#6cc281"></i><span class="t" id="winTitle">Fetch is resting</span></div>
+      <div class="stages" id="stages"></div>
+      <div class="feed" id="feed"><div class="idle">Press <b>Run the agent</b> and watch the story unfold here.</div></div>
+    </div>
+    <details class="tech">
+      <summary>Technical log, for debugging</summary>
+      <div class="techlog" id="techlog"></div>
+    </details>
   </section>
-  <section>
-    <h2>Claims</h2>
+
+  <!-- ================= TAB 3 ================= -->
+  <section class="tab" id="tab-results">
+    <div class="eyebrow">Two columns, no mixing</div>
+    <h2 style="margin:4px 0 14px">Verdict on the left, results on the right</h2>
     <div id="claims"></div>
   </section>
+
+  <!-- ================= TAB 4 ================= -->
+  <section class="tab" id="tab-outcomes">
+    <div class="eyebrow">The phone call</div>
+    <h2 style="margin:4px 0 6px">What the CPA can say, and what happens next</h2>
+    <p class="dim" style="margin:0 0 16px; max-width:70ch">The CPA never sees our number. They work it out on their own and tell our voice agent. The database itself decides whether the two figures agree. These are the four things that can come back.</p>
+    <div class="grid g2" id="scenarios"></div>
+
+    <div style="margin-top:28px" class="eyebrow">More to try</div>
+    <h2 style="margin:4px 0 14px">Other adjustments a CPA might raise</h2>
+    <div class="card">
+      <ul class="more" style="list-style:none; margin:0; padding:0">
+        <li><b>Part-time vs full-time.</b> "She was under 1,820 hours once unpaid leave comes out, so the part-time cap applies." The credit halves.</li>
+        <li><b>Non-qualified pay.</b> "That $84,000 includes a $6,000 signing bonus. Qualified wages are $78,000." The figure drops to $11,700.</li>
+        <li><b>Disabled-veteran rate.</b> "He has a VA disability rating on file. You're using the standard rate; it should be the higher one." The credit goes up, not down.</li>
+        <li><b>Documentation gap.</b> "No DD-214 in the file yet. I can't sign off until I see it." Held as needs-info, nothing changes until the paperwork lands.</li>
+        <li><b>Prior employment.</b> "He did contract work for your sister company last year. That may break the new-hire rule." Rejected, with a request for a fresh look at the related-entity test.</li>
+        <li><b>Hire window.</b> "Her start date is before the program's window for this tax year." Not eligible this year, possibly eligible next.</li>
+        <li><b>Wrong tax year.</b> "You're claiming on 2025, but first-year wages straddle into 2026. Which year are you filing?" Needs-info until the year is pinned.</li>
+      </ul>
+    </div>
+  </section>
 </main>
+
 <script>
-const claims = new Map();
-const money = v => v == null ? "—" : "$" + Number(v).toLocaleString(undefined, {maximumFractionDigits: 2});
+/* ---------- data from the seed; the only place ids are allowed ---------- */
+const COMPANY = {{ company | tojson }};
+const PROGRAMS = {{ programs | tojson }};
+const PEOPLE = Object.fromEntries((COMPANY.subjects || []).map(s => [s.subject_id, s]));
+PEOPLE[COMPANY.company_id] = { name: COMPANY.name, role: "the company", subject_id: COMPANY.company_id };
+const PROG = Object.fromEntries(PROGRAMS.map(p => [p.program_id, p]));
+
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money = v => v == null ? "—" : "$" + Number(v).toLocaleString(undefined, {maximumFractionDigits: 0});
+const nameOf = id => (PEOPLE[id] || {}).name || "this person";
+const progOf = id => (PROG[id] || {}).name || "this credit";
+const shortProg = id => progOf(id).replace(/^New York State /, "NY ");
+/* Replace any raw identifier that leaks through a reason string with its human name. */
+function humanize(s) {
+  s = String(s ?? "");
+  for (const id of Object.keys(PEOPLE)) s = s.split(id).join(nameOf(id));
+  for (const id of Object.keys(PROG).sort((a, b) => b.length - a.length)) s = s.split(id).join(shortProg(id));
+  return s;
+}
+
+/* ---------- tabs ---------- */
+const tabs = document.getElementById("tabs");
+tabs.onclick = e => { const b = e.target.closest("button"); if (b) showTab(b.dataset.tab); };
+function showTab(t) {
+  tabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.tab === t));
+  document.querySelectorAll(".tab").forEach(s => s.classList.toggle("active", s.id === "tab-" + t));
+  try { localStorage.setItem("fetch.tab", t); } catch (_) {}
+}
+try { const t = localStorage.getItem("fetch.tab"); if (t && document.getElementById("tab-" + t)) showTab(t); } catch (_) {}
+
+/* ---------- icons ---------- */
+const I = {
+  file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h13"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+  phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 5 5L20 7"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  q: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>',
+  flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V4h11l-1 4 4 .5-2 5H5"/></svg>',
+};
+
+/* ---------- Tab 2: stages + narrative ---------- */
+const STAGES = [
+  ["intake", "Opening the file", I.file], ["plan", "Choosing credits to check", I.search], ["fetch", "Reading the official rules", I.book],
+  ["compute", "Doing the math in a sealed room", I.lock], ["cpa", "On the phone with the CPA", I.phone], ["approve", "Ready for your sign-off", I.check],
+];
+let stageIdx = -1, running = false;
+function renderStages() {
+  document.getElementById("stages").innerHTML = STAGES.map(([k, l, ic], i) =>
+    `<div class="stage ${i < stageIdx ? "done" : i === stageIdx && running ? "now" : i === stageIdx ? "done" : ""}"><div class="dot">${ic}</div><div class="l">${l}</div></div>`).join("");
+  const title = document.getElementById("winTitle");
+  title.innerHTML = running && stageIdx >= 0 ? `${STAGES[stageIdx][1]}<span class="typing"><i></i><i></i><i></i></span>` : stageIdx >= 0 ? "Finished. Nothing moves without a human." : "Fetch is resting";
+}
+
+/* Technical log row -> plain English sentence. */
+function narrate(r) {
+  const m = r.msg || "";
+  let who = "", prog = "", mm;
+  if ((mm = m.match(/^([\w-]+)\/([\w-]+): (.*)$/))) { prog = shortProg(mm[1]); who = nameOf(mm[2]); }
+  switch (r.step) {
+    case "intake": return ["Opened the file on " + COMPANY.name + " and read the team's profiles.", "", I.file];
+    case "plan":
+      if (m.startsWith("aborted")) return ["Couldn't finish planning. The agent stopped rather than guess.", "bad", I.x];
+      if (m.startsWith("unknown")) return ["Ignored a credit it didn't recognize rather than invent one.", "warn", I.flag];
+      if ((mm = m.match(/^(\d+) programs, skipped (\d+)/))) return [`Picked ${mm[1]} credit${mm[1] == 1 ? "" : "s"} worth a close look and set aside ${mm[2]} that clearly ${mm[2] == 1 ? "doesn't" : "don't"} apply.`, "", I.search];
+      return [humanize(m), "", I.search];
+    case "fetch":
+      if (mm && /uncited/.test(mm[3])) return [`Stopped on ${prog} for ${who}: couldn't find the rule written in the official source, so no number was produced.`, "warn", I.flag];
+      if ((mm = m.match(/^(.*?): (\d+)\/(\d+) cited, status (\w+)/))) {
+        const st = {current: "The program is current.", expired: "The program has expired.", superseded: "This version was replaced by a newer one.", unknown: "Couldn't confirm whether it's still current."}[mm[4]] || "";
+        return [`Read the official rules for ${mm[1].replace(/^New York State /, "NY ")}. Quoted ${mm[2]} of ${mm[3]} facts word for word from the source. ${st}`, mm[4] === "current" ? "ok" : "", I.book];
+      }
+      return [humanize(m), "", I.book];
+    case "compute":
+      if (!mm) return [humanize(m), "", I.lock];
+      if (/not eligible \(superseded\)/.test(mm[3])) return [`${who} can't use ${prog}: it was replaced by a newer version of the credit.`, "", I.x];
+      if (/not eligible \(expired\)/.test(mm[3])) return [`${who} can't use ${prog}: the program has expired.`, "", I.x];
+      if (/^unverified ([\d.]+)/.test(mm[3])) return [`${who} is possibly eligible for ${prog}: ${money(mm[3].match(/[\d.]+/)[0])}. Nobody can act on it until an independent CPA confirms.`, "ok", I.check];
+      if (/^not_eligible/.test(mm[3])) return [`${who} doesn't qualify for ${prog} this year.`, "", I.x];
+      if (/^compute_error/.test(mm[3])) return [`Hit a snag working out ${prog} for ${who}. Nothing was recorded.`, "bad", I.x];
+      return [humanize(m), "", I.lock];
+    case "done": return ["Finished. Every figure is on hold until a CPA confirms it and a human approves it.", "ok", I.check];
+    default: return [humanize(m), "", I.file];
+  }
+}
+/* Claim state change (live stream) -> plain English. */
+function narrateClaim(c) {
+  const who = nameOf((c.agent_inputs || {}).subject_id || c.company_id), prog = shortProg(c.program_id);
+  switch (c.state) {
+    case "sent": return [`Sent ${who}'s ${prog} claim to the CPA with a one-time code. Our figure stays hidden from them.`, "info", I.phone];
+    case "confirmed": return [`The CPA independently reached the same figure for ${who}. The database is checking the match.`, "ok", I.check];
+    case "ready": return [`Match confirmed for ${who}: ${money(c.cpa_value)} from the CPA, ${money(c.agent_value)} from us. Ready for your approval.`, "ok", I.check];
+    case "rejected": return [`The CPA came back with ${money(c.cpa_value)} for ${who}, not ${money(c.agent_value)}. Marking this one wrong and recomputing with their correction.`, "bad", I.x];
+    case "needs-info": return [`The CPA wasn't certain about ${who}'s figure. Holding until they confirm it plainly.`, "warn", I.q];
+    case "approved": return [`Approved. ${who}'s ${prog} credit of ${money(c.agent_value)} is signed off.`, "ok", I.check];
+    default: return null;
+  }
+}
+
+const seenLog = new Set(), seenClaimState = new Map();
+let feedEmpty = true;
+function pushEvent([text, tone, icon], at) {
+  const feed = document.getElementById("feed");
+  if (feedEmpty) { feed.innerHTML = ""; feedEmpty = false; }
+  const when = at ? new Date(at).toLocaleTimeString([], {hour: "numeric", minute: "2-digit", second: "2-digit"}) : "";
+  feed.insertAdjacentHTML("beforeend", `<div class="ev ${tone}"><div class="ic">${icon}</div><div>${esc(text)}<div class="when">${when}</div></div></div>`);
+  feed.scrollTop = feed.scrollHeight;
+}
+async function loadLog() {
+  const rows = (await (await fetch("/api/log")).json()).slice().reverse();  // oldest first
+  const latestRun = rows.length ? rows[rows.length - 1].run_id : null;
+  const tech = document.getElementById("techlog");
+  tech.innerHTML = rows.map(r => `<div><span class="at">${esc((r.at || "").slice(11, 19))}</span><span class="s">${esc(r.step)}</span>${esc(r.msg)}</div>`).join("") || '<div class="dim">No log yet.</div>';
+  tech.scrollTop = tech.scrollHeight;
+  let last = null;
+  for (const r of rows) {
+    if (r.run_id !== latestRun) continue;
+    last = r;
+    if (seenLog.has(r.id)) continue;
+    seenLog.add(r.id);
+    const n = narrate(r); if (n) pushEvent(n, r.at);
+  }
+  if (last) {
+    const order = {intake: 0, plan: 1, fetch: 2, compute: 3, done: 3};
+    running = last.step !== "done" && !/aborted/.test(last.msg || "");
+    const cpaStates = [...claims.values()].filter(c => c.run_id === latestRun && !c.superseded_by).map(c => c.state);
+    if (cpaStates.some(s => s === "approved")) { stageIdx = 5; running = false; }
+    else if (cpaStates.some(s => s === "ready")) { stageIdx = 5; running = true; }
+    else if (cpaStates.some(s => ["sent", "confirmed", "rejected", "needs-info"].includes(s))) { stageIdx = 4; running = true; }
+    else stageIdx = Math.max(stageIdx, order[last.step] ?? 0);
+    renderStages();
+  }
+}
+
+/* ---------- Tab 3: claims ---------- */
+const claims = new Map();
+const VERDICT = {
+  unverified: ["ok", "Possibly eligible", I.check], uncited: ["warn", "Couldn't cite the rule", I.flag],
+  compute_error: ["bad", "Couldn't compute", I.x], not_eligible: ["neutral", "Not eligible", I.x],
+  sent: ["info", "With the CPA now", I.phone], confirmed: ["ok", "CPA agrees, checking match", I.check],
+  rejected: ["bad", "CPA disagrees", I.x], "needs-info": ["warn", "CPA unsure, on hold", I.q],
+  ready: ["ok", "Verified. Ready to approve", I.check], approved: ["ok", "Approved", I.check],
+};
+function plainReason(c) {
+  if (c.superseded_by) return "An updated version of this claim replaced it.";
+  if (c.state === "not_eligible" && /superseded/.test(c.reason || "")) return "This is an older version of the credit; the current version was checked instead.";
+  if (c.state === "ready") return "The CPA's independent figure matches ours within tolerance. Only a human click can approve it.";
+  if (c.state === "approved") return "Signed off by a human after an independent CPA match.";
+  if (c.state === "sent") return "The CPA has the inputs and a one-time code, but not our figure.";
+  if (c.state === "rejected") return "The CPA's figure differs from ours. A corrected claim is being prepared.";
+  if (c.state === "needs-info") return "The CPA hedged or didn't confirm on read-back. Nothing moves until they do.";
+  if (c.state === "unverified") return "Every rule we could quote checked out. Step 2 is sending it to a CPA who works it out blind.";
+  if (c.state === "not_eligible") return "One of the rules isn't met. The details are on the right.";
+  return humanize(c.reason || "");
+}
+/* "Hire window: met - detail; Hours: not met - detail" -> rows with a verdict icon each. */
+function checklist(reason) {
+  const parts = String(reason || "").split(/\.?;\s+(?=[A-Z][^:;]{1,70}:)/).map(t => t.trim()).filter(Boolean);
+  if (parts.length < 2) return "";
+  const rows = parts.map(t => {
+    const m = t.match(/^([^:]{1,80}):\s*(.*)$/s);
+    const label = m ? m[1] : "", rest = humanize(m ? m[2] : t).replace(/\.$/, "");
+    const v = rest.match(/^(not met|met|not satisfied|satisfied|fail(?:ed)?|pass(?:ed)?|not evaluated|not applicable|n\/a|assumed|unknown)\b\s*[-:–]?\s*/i);
+    const verdict = v ? v[1].toLowerCase() : "";
+    const detail = v ? rest.slice(v[0].length) : rest;
+    const tone = /^(met|satisfied|pass)/.test(verdict) ? "ok" : /^(not met|not satisfied|fail)/.test(verdict) ? "bad" : verdict ? "warn" : "";
+    const icon = tone === "ok" ? I.check : tone === "bad" ? I.x : tone === "warn" ? I.q : I.file;
+    return `<li class="${tone}"><span class="ic">${icon}</span><div><b>${esc(label)}</b>${verdict ? ` <span class="vd">${esc(verdict)}</span>` : ""}<div class="d">${esc(detail)}</div></div></li>`;
+  });
+  return `<ul class="checks">${rows.join("")}</ul>`;
+}
+const STEPS = ["Checked", "CPA call", "Approve"];
+function stepOf(state) { return ["approved"].includes(state) ? 3 : ["sent", "confirmed", "rejected", "needs-info", "ready"].includes(state) ? 2 : ["unverified"].includes(state) ? 1 : 0; }
 
 function render() {
-  const list = [...claims.values()].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
-  document.getElementById("claims").innerHTML = list.map(c => `
-    <div class="claim ${c.superseded_by ? "superseded" : ""}">
-      <div class="row"><div><b>${esc(c.program_id)}</b> <span class="dim">${esc((c.agent_inputs || {}).subject_id || c.company_id)}</span></div>
-        <span class="chip ${esc(c.state)}">${esc(c.state)}</span></div>
-      <div class="vals"><div><div class="dim">Agent</div><b>${money(c.agent_value)}</b></div>
-        <div><div class="dim">CPA</div><b>${money(c.cpa_value)}</b></div></div>
-      ${c.formula ? `<div class="dim">${esc(c.formula)}</div>` : ""}
-      ${c.reason ? `<div class="dim">${esc(c.reason)}</div>` : ""}
-      ${c.superseded_by ? `<div class="dim">superseded by ${esc(c.superseded_by)}</div>` : ""}
-      <details><summary>${(c.citations || []).length} citations</summary>
-        ${(c.citations || []).map(x => `<blockquote class="${x.cited ? "" : "miss"}"><b>${esc(x.criterion)}</b>: ${esc(x.value)}<br>“${esc(x.quote)}”<br><a href="${esc(x.source_url)}" target="_blank" class="dim">${esc(x.source_url)}</a></blockquote>`).join("")}
-      </details>
-      <div class="row" style="justify-content:flex-end; margin-top:8px">
-        ${c.state === "unverified" && !c.superseded_by ? `<button class="ghost" onclick="send('${c.id}')">Send to CPA</button>` : ""}
-        ${c.state === "sent" ? `<a href="/cpa?claim=${encodeURIComponent(c.id)}" target="_blank"><button class="ghost">Open CPA page</button></a>` : ""}
-        ${c.state === "ready" ? `<button onclick="approve('${c.id}')">Approve</button>` : ""}
+  const PRI = {approved: 0, ready: 1, sent: 2, confirmed: 2, "needs-info": 2, rejected: 2, unverified: 3, uncited: 4, compute_error: 4, not_eligible: 5};
+  const all = [...claims.values()].sort((a, b) => ((PRI[a.state] ?? 9) - (PRI[b.state] ?? 9)) || (b.created_at || "").localeCompare(a.created_at || ""));
+  const isOld = c => c.superseded_by || (PROG[c.program_id] || {}).superseded_by;
+  const list = all.filter(c => !isOld(c)), old = all.filter(isOld);
+  const el = document.getElementById("claims");
+  if (!all.length) { el.innerHTML = '<div class="card empty">No results yet. Run the agent from the top right.</div>'; return; }
+  const card = c => {
+    const [tone, label, icon] = VERDICT[c.state] || ["neutral", c.state, I.file];
+    const sid = (c.agent_inputs || {}).subject_id || c.company_id;
+    const person = PEOPLE[sid] || {};
+    const inputs = c.agent_inputs || {};
+    const both = c.agent_value != null && c.cpa_value != null;
+    const match = both ? (Math.abs(c.agent_value - c.cpa_value) <= Math.max(1, 0.01 * Math.abs(c.cpa_value)) ? "yes" : "no") : "wait";
+    const cites = c.citations || [];
+    return `
+    <article class="claim ${c.superseded_by ? "superseded" : ""}">
+      <div class="verdict">
+        <div class="eyebrow">Verdict</div>
+        <div class="status ${tone}">${icon} ${esc(label)}</div>
+        <div class="who">${esc(nameOf(sid))}<small>${esc(person.role ? person.role + " · " : "")}${esc(shortProg(c.program_id))}</small></div>
+        <p class="small" style="margin:0">${esc(plainReason(c))}</p>
+        ${stepOf(c.state) ? `<ol class="steps">${STEPS.map((t, i) => `<li class="${i < stepOf(c.state) ? "done" : i === stepOf(c.state) ? "next" : ""}"><i>${i + 1}</i>${t}</li>`).join("")}</ol>` : ""}
+        <div class="actions">
+          ${c.state === "unverified" && !c.superseded_by ? `<button class="btn ghost" onclick="send('${esc(c.id)}')">Send to CPA</button>` : ""}
+          ${c.state === "sent" ? `<a class="btn ghost" href="/cpa?claim=${encodeURIComponent(c.id)}" target="_blank">Open the CPA's page</a>` : ""}
+          ${c.state === "ready" ? `<button class="btn ok" onclick="approve('${esc(c.id)}')">Approve ${money(c.agent_value)}</button>` : ""}
+        </div>
       </div>
-    </div>`).join("") || `<div class="dim">No claims yet.</div>`;
+      <div class="results">
+        <div class="eyebrow">Results</div>
+        <div class="figures" style="margin-top:8px">
+          <div class="fig"><div class="k">Our figure</div><div class="v num">${money(c.agent_value)}</div></div>
+          <div class="fig cpa"><div class="k">CPA's figure</div><div class="v num">${money(c.cpa_value)}</div></div>
+          <div class="match ${match}">${match === "yes" ? "Match" : match === "no" ? "Differs" : "Awaiting CPA"}</div>
+        </div>
+        ${c.formula ? `<div class="small dim" style="margin-top:10px">How it was worked out: <span class="mono">${esc(humanize(c.formula))}</span></div>` : ""}
+        <div class="kv">
+          ${inputs.hours_first_12_months != null ? `<div class="dim">Hours, first year<b class="num">${Number(inputs.hours_first_12_months).toLocaleString()}</b></div>` : ""}
+          ${inputs.wages_first_12_months != null ? `<div class="dim">Wages, first year<b class="num">${money(inputs.wages_first_12_months)}</b></div>` : ""}
+          ${person.hire_date ? `<div class="dim">Start date<b>${esc(person.hire_date)}</b></div>` : ""}
+          ${c.cpa_at ? `<div class="dim">CPA answered<b>${esc(new Date(c.cpa_at).toLocaleString())}</b></div>` : ""}
+        </div>
+        ${(() => { if (/superseded/.test(c.reason || "")) return ""; const cl = checklist(c.reason); if (cl) return `<div class="eyebrow" style="margin-top:16px">What was checked</div>${cl}`; return c.reason && c.state === "not_eligible" ? `<div class="small" style="margin-top:12px"><b>Why not:</b> ${esc(humanize(c.reason))}</div>` : ""; })()}
+        <details class="cites"><summary>${cites.length} fact${cites.length === 1 ? "" : "s"} quoted from the official source</summary>
+          ${cites.map(x => `<blockquote class="${x.cited ? "" : "miss"}"><div class="c">${esc(x.criterion)}</div><div>${esc(x.value)}</div><div class="q">“${esc(x.quote)}”</div><a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(x.source_url)}</a></blockquote>`).join("")}
+        </details>
+      </div>
+    </article>`;
+  };
+  el.innerHTML = list.map(card).join("") +
+    (old.length ? `<details class="tech"><summary>${old.length} more: older versions of a credit, or claims that were replaced</summary><div style="padding-top:14px">${old.map(card).join("")}</div></details>` : "");
+  renderScenarios();
 }
-
 async function loadClaims() { (await (await fetch("/api/claims")).json()).forEach(c => claims.set(c.id, c)); render(); }
-async function loadLog() {
-  const rows = await (await fetch("/api/log")).json();
-  document.getElementById("log").innerHTML = rows.map(r => `<div><span class="step">${esc(r.step)}</span>${esc(r.msg)}</div>`).join("");
-}
 async function send(id) {
   const r = await fetch(`/api/claims/${encodeURIComponent(id)}/send`, {method: "POST"});
   if (r.ok) window.open((await r.json()).cpa_url || `/cpa?claim=${encodeURIComponent(id)}`, "_blank");
@@ -114,12 +529,58 @@ async function send(id) {
 }
 async function approve(id) {
   const r = await fetch(`/api/claims/${encodeURIComponent(id)}/approve`, {method: "POST"});
-  if (!r.ok) alert(await r.text());
+  if (!r.ok) alert("The gate refused it: " + await r.text());
   loadClaims();
 }
-document.getElementById("run").onclick = () => fetch("/api/run", {method: "POST"});
-new EventSource("/api/stream").onmessage = e => { const c = JSON.parse(e.data); if (c.id) { claims.set(c.id, c); render(); } };
-loadClaims(); loadLog(); setInterval(loadLog, 2000);
+
+/* ---------- Tab 4: scenarios ---------- */
+const SCENARIOS = [
+  { key: "approve", states: ["ready", "approved", "confirmed"], tone: "ok", icon: I.check, title: "The CPA approves",
+    flow: [["Our figure: $12,600"], ["CPA says: $12,600", "ok"], ["Database confirms the match", "ok"], ["You click Approve", "ok"]],
+    quote: "“Fifteen percent of eighty-four thousand, under the cap. Twelve thousand six hundred. Yes, confirmed.”",
+    body: "Two independent figures agree. Only now does the Approve button appear, and only a human can press it." },
+  { key: "deny", states: ["rejected"], tone: "bad", icon: I.x, title: "The CPA denies, with a small adjustment",
+    flow: [["Our figure: $12,600"], ["CPA says: $11,700", "bad"], ["Marked wrong", "bad"], ["Recomputed with the CPA's note"]],
+    quote: "“Your wage number includes a signing bonus. Qualified wages are seventy-eight thousand, so it's eleven thousand seven hundred.”",
+    body: "A niche detail we had no way to know. The claim is rejected on the record, and a corrected claim is prepared using the CPA's reason, not their number." },
+  { key: "hedge", states: ["needs-info"], tone: "warn", icon: I.q, title: "The CPA isn't sure",
+    flow: [["Our figure: $12,600"], ["CPA says: “about twelve six, I think”", "warn"], ["On hold"]],
+    quote: "“Roughly twelve thousand six hundred, I'd want to double-check the hours.”",
+    body: "Hedging words or a missing read-back confirmation never count as agreement. Nothing is approved until the CPA says it plainly." },
+  { key: "code", states: [], tone: "neutral", icon: I.lock, title: "Wrong code or wrong caller",
+    flow: [["Caller reads a code"], ["Code doesn't match", "bad"], ["Nothing written"]],
+    quote: "“The code is... zero zero zero zero zero zero?”",
+    body: "Each claim gets a one-time code shown only on the CPA's page. A wrong code is refused outright and the claim is untouched." },
+];
+function renderScenarios() {
+  const states = [...claims.values()].map(c => c.state);
+  document.getElementById("scenarios").innerHTML = SCENARIOS.map(s => `
+    <div class="card scen">
+      <div class="head"><div class="status ${s.tone}">${s.icon} ${esc(s.title)}</div>${s.states.some(x => states.includes(x)) ? '<span class="seen">Happened in this run</span>' : ""}</div>
+      <div class="flow">${s.flow.map(([t, tone], i) => `${i ? "<i>→</i>" : ""}<span class="${tone || ""}">${esc(t)}</span>`).join("")}</div>
+      <div class="quote">${esc(s.quote)}</div>
+      <p class="small" style="margin:0">${esc(s.body)}</p>
+    </div>`).join("");
+}
+
+/* ---------- wiring ---------- */
+document.getElementById("run").onclick = async e => {
+  e.currentTarget.disabled = true; setTimeout(() => e.target.closest("button").disabled = false, 4000);
+  await fetch("/api/run", {method: "POST"});
+  showTab("live"); stageIdx = 0; running = true; renderStages();
+};
+new EventSource("/api/stream").onmessage = e => {
+  const c = JSON.parse(e.data); if (!c.id) return;
+  claims.set(c.id, c); render();
+  if (seenClaimState.get(c.id) !== c.state) {
+    seenClaimState.set(c.id, c.state);
+    const n = narrateClaim(c); if (n) pushEvent(n, c.cpa_at || new Date().toISOString());
+  }
+  loadLog();
+};
+renderStages(); renderScenarios();
+loadClaims().then(() => { [...claims.values()].forEach(c => seenClaimState.set(c.id, c.state)); loadLog(); });
+setInterval(loadLog, 2000);
 </script>
 </body>
 </html>

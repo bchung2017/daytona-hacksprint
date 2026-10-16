@@ -53,14 +53,15 @@ def index():
 
 @app.get("/cpa")
 def cpa():
-    claim = store.get_claim(request.args.get("claim", ""))
+    cid = request.args.get("claim", "")
+    claim = store.get_claim(cid) if cid.startswith("claim:") else None
     if not claim or claim["state"] != "sent":
         return render_template("cpa.html", claim=None)
     company, programs = agent.load_seed()
     program = next((p for p in programs if p["program_id"] == claim["program_id"]), {})
     subject = agent.subjects_of(company).get((claim.get("agent_inputs") or {}).get("subject_id"), {})
     dyn = {"claim_id": claim["id"], "program_name": program.get("name", ""), "company_name": company["name"],
-           "subject": subject.get("description", "")}
+           "subject": ", ".join(x for x in (subject.get("name"), subject.get("description")) if x)}
     return render_template("cpa.html", claim=_public_claim(claim), code=claim["cpa_code"], program=program,
                            subject=subject, company=company, agent_id=os.getenv("ELEVENLABS_AGENT_ID", ""),
                            dynamic_variables=json.dumps(dyn))

@@ -19,6 +19,8 @@
   "subjects": [
     {
       "subject_id": "vet-ramos",
+      "name": "Elena Ramos",
+      "role": "Machinist",
       "kind": "employee",
       "description": "Qualified veteran, machinist",
       "hire_date": "2025-01-13",
@@ -30,6 +32,8 @@
     },
     {
       "subject_id": "vet-okafor",
+      "name": "David Okafor",
+      "role": "Assembly Technician",
       "kind": "employee",
       "description": "Qualified veteran, assembly technician",
       "hire_date": "2025-04-07",
@@ -39,5 +43,7 @@
       "disabled_veteran": false,
       "prior_180_day_affidavit_signed": true
     }
-  ]
+  ],
+  "tagline": "Precision robotics subassemblies, built in Brooklyn since 2019.",
+  "about": "Hudson Forge Robotics designs and machines motion-control subassemblies for warehouse automation. A 42-person team in Sunset Park, with a deliberate hiring pipeline for veterans leaving service with machining and electronics experience."
 }

@@ -3,39 +3,52 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CPA Verification</title>
+<title>CPA verification — Fetch</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0f1115; --panel:#171a21; --line:#262b36; --text:#e6e8ee; --dim:#8b93a7; --accent:#6aa8ff; }
-  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 ui-sans-serif, system-ui, sans-serif; }
-  .wrap { max-width:560px; margin:40px auto; padding:0 16px; }
-  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px; }
-  .code { font:700 44px/1 ui-monospace, monospace; letter-spacing:.2em; margin:12px 0; color:var(--accent); }
+  :root { --maroon:#6e1f2b; --maroon-deep:#4d1420; --brown:#8a5a33; --brown-deep:#5c3a1e; --tan:#d9b99b; --tan-soft:#f1e6da; --cream:#faf6f1; --white:#fff; --ink:#2a1a14; --dim:#7a6a60; --line:#e9ddd2; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--cream); color:var(--ink); font:15px/1.5 Inter, ui-sans-serif, system-ui, sans-serif; }
+  .wrap { max-width:600px; margin:40px auto; padding:0 16px; }
+  .brand { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .brand h1 { font:800 20px Fraunces, serif; margin:0; } .brand .tag { font-size:12px; color:var(--dim); }
+  .card { background:var(--white); border:1px solid var(--line); border-radius:14px; padding:24px; box-shadow:0 8px 24px -12px rgba(42,26,20,.18); }
+  .eyebrow { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--brown); }
+  .code { font:800 48px/1 ui-monospace, Menlo, monospace; letter-spacing:.18em; margin:10px 0 18px; color:var(--maroon); }
   .dim { color:var(--dim); font-size:13px; }
-  dl { display:grid; grid-template-columns:auto 1fr; gap:6px 12px; } dt { color:var(--dim); } dd { margin:0; }
+  dl { display:grid; grid-template-columns:auto 1fr; gap:8px 14px; margin:0; } dt { color:var(--dim); } dd { margin:0; font-weight:600; }
+  .note { margin-top:18px; padding:12px 14px; background:var(--tan-soft); border-radius:10px; font-size:13px; color:var(--brown-deep); }
+  h2 { font:800 22px Fraunces, serif; margin:0 0 6px; }
 </style>
 </head>
 <body>
 <div class="wrap">
+  <div class="brand">
+    <svg width="36" height="36" viewBox="0 0 64 64" aria-hidden="true"><path d="M14 30 L8 10 L26 20 Z" fill="#8a5a33"/><path d="M50 30 L56 10 L38 20 Z" fill="#8a5a33"/><ellipse cx="32" cy="34" rx="21" ry="19" fill="#8a5a33"/><path d="M32 15 C27 20 25 28 25 36 C25 44 28 50 32 53 C36 50 39 44 39 36 C39 28 37 20 32 15 Z" fill="#fff"/><ellipse cx="32" cy="43" rx="10" ry="8" fill="#fff"/><circle cx="24" cy="33" r="2.6" fill="#2a1a14"/><circle cx="40" cy="33" r="2.6" fill="#2a1a14"/><path d="M28.5 41 Q32 38.5 35.5 41 Q32 45 28.5 41 Z" fill="#2a1a14"/><path d="M13 50 Q32 44 51 50 L48 58 Q32 54 16 58 Z" fill="#6e1f2b"/></svg>
+    <div><h1>Fetch</h1><div class="tag">Independent CPA verification</div></div>
+  </div>
   {% if not claim %}
   <div class="card"><h2>No active verification</h2><p class="dim">This link has expired or the claim was already verified.</p></div>
   {% else %}
   <div class="card">
-    <div class="dim">Verification code. Read it to the agent when asked.</div>
+    <div class="eyebrow">Your one-time code. Read it to the agent when asked.</div>
     <div class="code">{{ code }}</div>
     <dl>
       <dt>Company</dt><dd>{{ company.name }}</dd>
-      <dt>Program</dt><dd>{{ program.name }}</dd>
-      <dt>Subject</dt><dd>{{ subject.description }} (hired {{ subject.hire_date }})</dd>
-      <dt>Hours</dt><dd>{{ "{:,}".format(subject.hours_first_12_months) }} in first 12 months</dd>
-      <dt>Wages</dt><dd>${{ "{:,}".format(subject.wages_first_12_months) }} in first 12 months</dd>
+      <dt>Credit</dt><dd>{{ program.name }}</dd>
+      <dt>Employee</dt><dd>{{ subject.name or subject.description }}{% if subject.role %}, {{ subject.role }}{% endif %}</dd>
+      <dt>Profile</dt><dd>{{ subject.description }}</dd>
+      <dt>Start date</dt><dd>{{ subject.hire_date }}</dd>
+      <dt>Hours</dt><dd>{{ "{:,}".format(subject.hours_first_12_months) }} in the first 12 months</dd>
+      <dt>Wages</dt><dd>${{ "{:,}".format(subject.wages_first_12_months) }} in the first 12 months</dd>
     </dl>
-    <p class="dim">Compute the credit independently. The agent will not tell you its figure.</p>
+    <div class="note">Work out the credit on your own. The agent will not tell you its figure, and it only counts your number if you state it plainly and confirm it on read-back.</div>
   </div>
   {% if agent_id %}
   <elevenlabs-convai agent-id="{{ agent_id }}" dynamic-variables='{{ dynamic_variables }}'></elevenlabs-convai>
   <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
   {% else %}
-  <p class="dim">ELEVENLABS_AGENT_ID is not set.</p>
+  <p class="dim">The voice agent isn't configured yet.</p>
   {% endif %}
   {% endif %}
 </div>
