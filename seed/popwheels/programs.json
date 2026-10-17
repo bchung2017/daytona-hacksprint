@@ -1,5 +1,15 @@
 [
   {
+    "program_id": "federal-research-credit",
+    "name": "Federal Credit for Increasing Research Activities (Form 6765), with the qualified small business payroll tax offset",
+    "jurisdiction": "US",
+    "level": "company",
+    "urls": [
+      "https://www.irs.gov/pub/irs-pdf/i6765.pdf",
+      "https://www.irs.gov/businesses/small-businesses-self-employed/qualified-small-business-payroll-tax-credit-for-increasing-research-activities"
+    ]
+  },
+  {
     "program_id": "nys-ev-recharging-property",
     "name": "New York State Alternative Fuels and Electric Vehicle Recharging Property Credit",
     "jurisdiction": "NY",

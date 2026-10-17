@@ -33,5 +33,35 @@
     "description": "No manufacturing or production equipment placed in service in 2025. Cabinets are assembled by a contract manufacturer.",
     "total_cost_2025": 0
   },
-  "subjects": []
+  "subjects": [],
+  "research": {
+    "description": "In-house development of battery swap cabinet hardware, battery management firmware, and the rider app. Engineers in Brooklyn, NY.",
+    "qualified_research_expenses_2025": {
+      "total_claimed": 450000,
+      "wages_for_qualified_services": 380000,
+      "supplies": 30000,
+      "contract_research_gross": 40000,
+      "note": "The $450,000 total is the company's figure. The split is a placeholder; contract research is shown gross, before any 65% limitation the source may impose."
+    },
+    "qualified_research_expenses_prior_years": {
+      "2024": 300000,
+      "2023": 180000,
+      "2022": 0,
+      "note": "PLACEHOLDERS. Needed only for the base-amount calculation."
+    },
+    "gross_receipts": {
+      "2025": 1800000,
+      "2024": 900000,
+      "2023": 250000,
+      "2022": 40000,
+      "2021": 0,
+      "first_year_with_gross_receipts": 2022,
+      "note": "PLACEHOLDERS."
+    },
+    "elects_payroll_tax_offset": true,
+    "employer_social_security_tax_2025": 148800,
+    "employer_medicare_tax_2025": 34800,
+    "previous_payroll_offset_elections": 0,
+    "research_conducted_in": "US"
+  }
 }
