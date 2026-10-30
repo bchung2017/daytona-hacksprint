@@ -15,6 +15,7 @@
   "employees": 42,
   "annual_payroll": 3650000,
   "annual_revenue": 9800000,
+  "estimated_tax_before": 186000,
   "is_restaurant": false,
   "subjects": [
     {
