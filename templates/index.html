@@ -75,6 +75,20 @@
   .titlebar i { width:11px; height:11px; border-radius:50%; display:inline-block; }
   .titlebar .t { margin-left:8px; font-weight:600; font-size:13px; color:var(--dim); }
   .stages { display:grid; grid-template-columns:repeat(6, 1fr); gap:0; padding:22px 18px 10px; position:relative; }
+
+  /* ---- run progress bar ---- */
+  .runbar { display:flex; gap:6px; margin-bottom:6px; }
+  .runbar .seg { position:relative; flex:1; height:8px; background:var(--line); border-radius:999px; overflow:hidden; }
+  .runbar .seg i { position:absolute; top:0; left:0; bottom:0; width:0; background:var(--brown); border-radius:999px; transition:width .5s ease; }
+  .runbar .seg.done i { width:100%; }
+  .runbar .seg.now i { width:100%; background:var(--maroon-soft); }
+  .runbar .seg.now::after { content:""; position:absolute; top:0; bottom:0; left:-40%; width:40%; border-radius:999px; background:var(--maroon); animation:sweep 1.1s ease-in-out infinite; }
+  @keyframes sweep { to { left:100%; } }
+  .runbar.error .seg { background:var(--bad-soft); }
+  .runbar.error .seg i, .runbar.error .seg.now::after { background:var(--bad); }
+  .runmsg { font-size:12.5px; font-weight:600; color:var(--dim); min-height:18px; margin-bottom:10px; }
+  .runmsg.error { color:var(--bad); }
+
   .stage { text-align:center; position:relative; padding:0 6px; }
   .stage::before { content:""; position:absolute; top:19px; left:-50%; width:100%; height:3px; background:var(--line); z-index:0; }
   .stage:first-child::before { display:none; }
@@ -382,6 +396,11 @@
   <section class="tab" id="tab-live">
     <div class="eyebrow">Full transparency</div>
     <h2 style="margin:4px 0 14px">What the agent is doing right now</h2>
+    <div class="runbar" id="runbar" hidden>
+      <span class="seg"><i></i></span><span class="seg"><i></i></span><span class="seg"><i></i></span>
+      <span class="seg"><i></i></span><span class="seg"><i></i></span><span class="seg"><i></i></span>
+    </div>
+    <div class="runmsg" id="runMsg"></div>
     <div class="window">
       <div class="titlebar"><i style="background:#e06c6c"></i><i style="background:#e8b84a"></i><i style="background:#6cc281"></i><span class="t" id="winTitle">TaxBeagle is resting</span>
         <button class="replay" id="run" title="Start a real run">
@@ -529,13 +548,27 @@ const LOGOS = {
   arize:      ["Arize",      `<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAChklEQVR42sWXPWgUURSFvx3cLVNZuK2kM4sIghCUgfBAXGwkTaZKkULRLARxC5eYIpsfcC0CWggaxSLMNkIqizAEphGs0y5a7oImxYIWprE5gWF4L44v2fWW783PnXPv+e6b0u2lu/zPuOBzU5yEFWAOuAN8B95EJj3weVbgmfgj4K2SaAA7cRLWxpJAnIQzQBMoZ5ZrQCtOwomRJhAn4SWgDVQt27PAwsgSUN0XgWnHJWWgGSfhjVEpUFe9T4sqsCalzi+BOAkvA6tAkRobKXU+CUj6JTVa0WioWc9FgTnggWX9GOgBfcveBNAuUorgL19fA57lLHfy8tfALeAeYIPQtKxZ8UpAnm4Bk5btFNiITDqITPoFWAGGluvmpaCXAgvydj76wHJk0sHJQmTSXeCloxRP1MTFE5CXmw7pO/rqfLwCEst6DVh3lSJw0G7NQbuPwLbtQVJk09GUs5ofhRRYlJfz0VPdhy45I5PuAx0plafkQxslA8ugsdFuCLQLjtxtKZWPSVFywppAZtDYaPcB6BYBixTakmL5CPMDK8jQruUYNAfAVmTS30UxqCZtO0rRzFIyyAyaeYf0K5FJv3qcNbqOUlSzlCwdTXVqwI6D9euRSZd9z3vy/67r2cBqIOltFyTytndIORclG0A9kPw22m1maXeG+KQmtlFyJgB+WjY78vSZQ827AXy2UHUYCBz9zGLXRbszJDHQVO3lBtq70tFUpwJckwW/Afun0S5j2zpwHTgEkiKQ0ng3umcvMumg9K9/Rnr5Cx1SyhlM3/cpm8+PyU0xo5zD7NOR/xcorjpwfQW4OI4EDh3rP4Bf40hgz2Gp9z7cCDwt9VikPJaFn/ta9w938da1vHRmWwAAAABJRU5ErkJggg==" alt="">`],
 };
 const badge = k => `<span class="badge">${LOGOS[k][1]}${LOGOS[k][0]}</span>`;
-let stageIdx = -1, running = false;
+let stageIdx = -1, running = false, streamError = false;
 function renderStages() {
   document.getElementById("stages").innerHTML = STAGES.map(([k, l, ic, v], i) =>
     `<div class="stage ${i < stageIdx ? "done" : i === stageIdx && running ? "now" : i === stageIdx ? "done" : ""}"><div class="dot">${ic}</div><div class="l">${l}</div><div class="vend">${v.map(badge).join("")}</div></div>`).join("");
   document.getElementById("trace").innerHTML = `${badge("arize")}<span class="t">traces every step</span>`;
   const title = document.getElementById("winTitle");
   title.innerHTML = running && stageIdx >= 0 ? `${STAGES[stageIdx][1]}<span class="typing"><i></i><i></i><i></i></span>` : stageIdx >= 0 ? "Finished. Nothing moves without a human." : "TaxBeagle is resting";
+  renderRunBar();
+}
+
+/* One segment per stage: filled when passed, sweeping while active, red on a mid-run stream loss. */
+function renderRunBar() {
+  const bar = document.getElementById("runbar"), msg = document.getElementById("runMsg");
+  bar.hidden = stageIdx < 0;
+  const failed = streamError && running;
+  bar.classList.toggle("error", failed);
+  bar.querySelectorAll(".seg").forEach((seg, i) => {
+    seg.className = "seg " + (i < stageIdx || (i === stageIdx && !running) ? "done" : i === stageIdx && running ? "now" : "");
+  });
+  msg.className = failed ? "runmsg error" : "runmsg";
+  msg.textContent = failed ? "Live connection lost mid-run — the bar holds the last known stage. Reconnecting…" : "";
 }
 
 /* Technical log row -> plain English sentence. */
@@ -939,7 +972,10 @@ document.getElementById("run").onclick = async e => {
   await fetch("/api/run", {method: "POST"});
   stageIdx = 0; running = true; renderStages();
 };
-new EventSource("/api/stream").onmessage = e => {
+const stream = new EventSource("/api/stream");
+stream.onopen = () => { streamError = false; renderStages(); };
+stream.onerror = () => { streamError = true; renderStages(); };
+stream.onmessage = e => {
   const c = JSON.parse(e.data); if (!c.id) return;
   claims.set(c.id, c); render();
   const key = c.state + "|" + (c.human_approved_at || "");
