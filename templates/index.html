@@ -143,7 +143,10 @@
   .status.warn { background:var(--warn-soft); color:var(--warn); } .status.info { background:var(--info-soft); color:var(--info); } .status.neutral { background:var(--tan-soft); color:var(--brown-deep); }
   .who { font-family:Fraunces, serif; font-size:20px; font-weight:800; line-height:1.2; } .who small { display:block; font:500 13px Inter, sans-serif; color:var(--dim); margin-top:4px; }
   .actions { margin-top:auto; display:flex; gap:8px; flex-wrap:wrap; }
-  .btn { background:var(--maroon); color:var(--white); border:0; border-radius:9px; padding:9px 14px; font:inherit; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; }
+  .btn { background:var(--maroon); color:var(--white); border:0; border-radius:9px; padding:9px 14px; font:inherit; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; position:relative; overflow:hidden; }
+  .btn.busy { cursor:progress; opacity:.85; }
+  .btn .btnbar { position:absolute; left:-40%; bottom:0; height:3px; width:40%; background:rgba(255,255,255,.85); border-radius:999px; animation:sweep 1s ease-in-out infinite; }
+  .btn.failed { box-shadow:inset 0 0 0 2px var(--bad); }
   .btn.ghost { background:transparent; color:var(--maroon); border:1.5px solid var(--maroon); }
   .btn.ok { background:var(--ok); }
   .btn.cancel { background:transparent; color:var(--dim); border:1.5px solid var(--line); margin-left:auto; }
@@ -793,35 +796,62 @@ function cancel(id) { dismissed.add(id); render(); }
 function actionFor(c) {
   const id = esc(c.id);
   switch (c.state) {
-    case "unverified": return `<button class="btn" onclick="startLive('${id}')">Approve</button><span class="small dim" style="align-self:center">goes to the CPA first</span>`;
+    case "unverified": return `<button class="btn" onclick="startLive('${id}', this)">Approve</button><span class="small dim" style="align-self:center">goes to the CPA first</span>`;
     case "sent": case "confirmed": return `<button class="btn" disabled style="opacity:.55">${c.state === "sent" ? "Calling the CPA" : "CPA answered, checking the match"}<span class="typing" style="margin-left:8px"><i style="background:#fff"></i><i style="background:#fff"></i><i style="background:#fff"></i></span></button><a class="btn ghost" href="/cpa?claim=${encodeURIComponent(c.id)}" target="_blank">Open the CPA's page</a>`;
     case "needs-info": return `<button class="btn" disabled style="opacity:.55">CPA must confirm first</button>`;
     case "rejected": return `<button class="btn" disabled style="opacity:.55">CPA disagreed. Corrected claim coming</button>`;
-    case "ready": return `<button class="btn ok" onclick="approve('${id}')">Approve ${money(c.agent_value)}</button>`;
+    case "ready": return `<button class="btn ok" onclick="approve('${id}', this)">Approve ${money(c.agent_value)}</button>`;
     case "approved": return "";
-    default: return c.human_approved_at ? "" : `<button class="btn" onclick="acknowledge('${id}')">Approve verdict</button>`;
+    default: return c.human_approved_at ? "" : `<button class="btn" onclick="acknowledge('${id}', this)">Approve verdict</button>`;
   }
 }
-async function acknowledge(id) {
-  const r = await fetch(`/api/claims/${encodeURIComponent(id)}/acknowledge`, {method: "POST"});
-  if (!r.ok) alert(await r.text());
+/* Disable with an indeterminate bar from click until the fetch settles; re-enable, or mark
+   failed on the real outcome. No timers — the button never lies about how long work takes. */
+async function withProgress(btn, run) {
+  btn.classList.remove("failed");
+  btn.classList.add("busy");
+  btn.disabled = true;
+  const bar = document.createElement("span");
+  bar.className = "btnbar";
+  bar.setAttribute("aria-hidden", "true");
+  btn.appendChild(bar);
+  try {
+    await run();
+  } catch (err) {
+    btn.classList.add("failed");
+    console.error(err);
+  } finally {
+    btn.classList.remove("busy");
+    btn.disabled = false;
+    bar.remove();
+  }
+}
+async function acknowledge(id, btn) {
+  await withProgress(btn, async () => {
+    const r = await fetch(`/api/claims/${encodeURIComponent(id)}/acknowledge`, {method: "POST"});
+    if (!r.ok) alert(await r.text());
+  });
   loadClaims();
 }
 async function loadClaims() { (await (await fetch("/api/claims")).json()).forEach(c => claims.set(c.id, c)); render(); }
-async function startLive(id) {
+async function startLive(id, btn) {
   liveStarted = true;
-  const c = claims.get(id);
-  if (c && c.state !== "unverified") { const r = await fetch(`/api/claims/${encodeURIComponent(id)}/reset`, {method: "POST"}); if (!r.ok) { alert(await r.text()); return; } }
-  await send(id);
+  await withProgress(btn, async () => {
+    const c = claims.get(id);
+    if (c && c.state !== "unverified") { const r = await fetch(`/api/claims/${encodeURIComponent(id)}/reset`, {method: "POST"}); if (!r.ok) { alert(await r.text()); return; } }
+    await send(id);
+  });
 }
 async function send(id) {
   const r = await fetch(`/api/claims/${encodeURIComponent(id)}/send`, {method: "POST"});
   if (r.ok) window.open((await r.json()).cpa_url || `/cpa?claim=${encodeURIComponent(id)}`, "_blank");
   loadClaims();
 }
-async function approve(id) {
-  const r = await fetch(`/api/claims/${encodeURIComponent(id)}/approve`, {method: "POST"});
-  if (!r.ok) alert("The gate refused it: " + await r.text());
+async function approve(id, btn) {
+  await withProgress(btn, async () => {
+    const r = await fetch(`/api/claims/${encodeURIComponent(id)}/approve`, {method: "POST"});
+    if (!r.ok) alert("The gate refused it: " + await r.text());
+  });
   loadClaims();
 }
 
