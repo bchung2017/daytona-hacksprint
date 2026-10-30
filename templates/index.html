@@ -736,7 +736,7 @@ function render() {
   };
   el.innerHTML = list.map(card).join("") +
     (old.length ? `<details class="tech"><summary>${old.length} more: older versions of a credit, or claims that were replaced</summary><div style="padding-top:14px">${old.map(card).join("")}</div></details>` : "");
-  renderScenarios();
+  renderScenarios(); renderPayoff(false);
 }
 /* Call transcript: only the verbatim recording the post-call webhook delivers. Never invented —
    until the webhook lands, the block says so instead of reconstructing a call. */
@@ -830,15 +830,35 @@ function drawFlow() {
   document.getElementById("flow").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Picture-book flow of the verdicts">${svg}</svg>`;
 }
 
-/* ---------- Tab 4: payoff (baked for the demo) ---------- */
-const TAX_BEFORE = 186000;  // estimated 2025 NYS franchise tax before credits
-const CREDITS = [
-  {id: "vet-ramos", name: "NY Hire a Veteran Credit", who: "Elena Ramos", initials: "ER", amount: 12600, note: "15% of first-year wages, under the $15,000 cap. Verified by the CPA on the call.", form: "Form CT-643"},
-  {id: "wotc", name: "Federal Work Opportunity Tax Credit", who: "Elena Ramos", initials: "ER", amount: 5600, note: "40% of the first $14,000 in wages for a veteran hired after 6+ months out of work.", form: "Form 5884"},
-  {id: "itc", name: "NY Investment Tax Credit", who: "Hudson Forge", initials: "HF", amount: 38500, note: "5% of $770,000 in new CNC and inspection equipment placed in service in 2025.", form: "Form CT-46"},
-];
-const creditOn = Object.fromEntries(CREDITS.map(c => [c.id, true]));
+/* ---------- Tab 4: payoff (live claims only) ---------- */
+// Estimated pre-credit tax bill, from the seed company (optional). The server renders it via the
+// company context; when absent, the before/after bar stays hidden rather than showing a default.
+const TAX_BEFORE = COMPANY.estimated_tax_before ?? null;
+const creditOn = {};  // claim id -> applied on/off; new claims default to on
 const fmt0 = v => "$" + Math.round(v).toLocaleString();
+
+/* Credits the payoff can honestly claim: the CPA confirmed the figure (or a human signed off)
+   and nothing has superseded the claim. Metadata comes from the seed programs, never hardcoded. */
+function liveCredits() {
+  return [...claims.values()]
+    .filter(c => c.state === "ready" && (c.cpa_confirmed || c.human_approved_at) && !c.superseded_by)
+    .map(c => {
+      const prog = PROG[c.program_id] || {};
+      const who = nameOf((c.agent_inputs || {}).subject_id || c.company_id);
+      return {
+        id: c.id,
+        name: prog.name || shortProg(c.program_id),
+        who,
+        initials: who.split(/\s+/).map(w => w[0] || "").join("").slice(0, 2).toUpperCase(),
+        amount: c.cpa_value ?? c.agent_value,
+        form: shortProg(c.program_id),
+        note: (prog.max_credit != null ? `Program cap ${money(prog.max_credit)}. ` : "")
+          + (c.cpa_confirmed ? "Confirmed by the CPA on the call." : "Approved by you on the record."),
+      };
+    })
+    .filter(c => c.amount != null);
+}
+
 let payAnim = null;
 function countTo(el, from, to, ms = 900) {
   if (payAnim) cancelAnimationFrame(payAnim);
@@ -848,25 +868,38 @@ function countTo(el, from, to, ms = 900) {
 }
 let lastTotal = 0;
 function renderPayoff(animate = true) {
-  const total = CREDITS.filter(c => creditOn[c.id]).reduce((a, c) => a + c.amount, 0);
+  const credits = liveCredits();
+  credits.forEach(c => { if (creditOn[c.id] === undefined) creditOn[c.id] = true; });
+  const on = credits.filter(c => creditOn[c.id]);
+  const total = on.reduce((a, c) => a + c.amount, 0);
+
+  // Honest empty states: no baseline or nothing confirmed -> no bar, no percentages, no invented figures.
+  const showBar = TAX_BEFORE != null && credits.length > 0;
+  document.querySelector("#tab-payoff .paybars").hidden = !showBar;
+
   const el = document.getElementById("payTotal");
   animate ? countTo(el, lastTotal, total) : (el.textContent = fmt0(total)); lastTotal = total;
-  const n = CREDITS.filter(c => creditOn[c.id]).length;
-  document.getElementById("paySub").textContent = n ? `${n} credit${n === 1 ? "" : "s"} across ${new Set(CREDITS.filter(c => creditOn[c.id]).map(c => c.who)).size} ${n === 1 ? "filer" : "people and the company"}. ${(100 * total / TAX_BEFORE).toFixed(0)}% off the state bill.` : "Nothing applied. This is what every prior year looked like.";
+  const n = on.length;
+  const filers = new Set(on.map(c => c.who)).size;
+  const pct = showBar ? ` ${(100 * total / TAX_BEFORE).toFixed(0)}% off the state bill.` : "";
+  document.getElementById("paySub").textContent =
+    n ? `${n} credit${n === 1 ? "" : "s"} across ${filers} ${filers === 1 ? "filer" : "people and the company"}.${pct}`
+      : "Nothing confirmed yet.";
   document.getElementById("barBefore").textContent = fmt0(TAX_BEFORE);
   const after = document.getElementById("barAfter"); after.style.width = Math.max(12, 100 * (TAX_BEFORE - total) / TAX_BEFORE) + "%";
   document.getElementById("barAfterVal").textContent = fmt0(TAX_BEFORE - total);
-  document.getElementById("credits").innerHTML = CREDITS.map(c => `
+  document.getElementById("credits").innerHTML = credits.length ? credits.map(c => `
     <div class="card credit ${creditOn[c.id] ? "" : "off"}">
       <div class="top"><div><div class="eyebrow">${esc(c.form)}</div><h3 style="margin-top:4px">${esc(c.name)}</h3></div>
         <button class="sw ${creditOn[c.id] ? "on" : ""}" aria-label="Apply ${esc(c.name)}" onclick="toggleCredit('${c.id}')"></button></div>
       <div class="amt num">${fmt0(c.amount)}</div>
       <div class="who"><i>${c.initials}</i>${esc(c.who)}</div>
       <p class="small" style="margin:0">${esc(c.note)}</p>
-    </div>`).join("");
-  const perYear = CREDITS.reduce((a, c) => a + c.amount, 0);
-  document.getElementById("years").innerHTML = [2022, 2023, 2024].map(y => `<div class="yr"><div class="y">${y}</div><div class="v">not claimed · ~${fmt0(Math.round(perYear * (y === 2024 ? .62 : y === 2023 ? .41 : .33) / 100) * 100)} missed</div></div>`).join("")
-    + `<div class="yr now"><div class="y">2025</div><div class="v">${fmt0(total)} claimed</div></div>`;
+    </div>`).join("")
+    : '<div class="card empty">Nothing confirmed yet. Once the CPA confirms a credit, it lands here.</div>';
+  const perYear = credits.reduce((a, c) => a + c.amount, 0);
+  document.getElementById("years").innerHTML = perYear ? [2022, 2023, 2024].map(y => `<div class="yr"><div class="y">${y}</div><div class="v">not claimed · ~${fmt0(Math.round(perYear * (y === 2024 ? .62 : y === 2023 ? .41 : .33) / 100) * 100)} missed</div></div>`).join("")
+    + `<div class="yr now"><div class="y">2025</div><div class="v">${fmt0(total)} claimed</div></div>` : "";
 }
 function toggleCredit(id) { creditOn[id] = !creditOn[id]; renderPayoff(); }
 
