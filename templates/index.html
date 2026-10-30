@@ -36,9 +36,6 @@
   nav .sep { width:1px; background:var(--line); margin:4px 4px; }
   nav button.info { color:var(--brown); } nav button.info .n.i { background:transparent; border:1.5px solid var(--brown); color:var(--brown); font-family:Fraunces, serif; font-style:italic; }
   nav button.info.active { background:var(--brown); } nav button.info.active .n.i { border-color:rgba(255,255,255,.6); color:var(--white); }
-  .run { background:var(--brown); color:var(--white); border:0; border-radius:10px; padding:10px 16px; font:inherit; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; }
-  .run:hover { background:var(--brown-deep); } .run:disabled { opacity:.6; cursor:default; }
-  .run .paw { width:16px; height:16px; }
 
   main { max-width:1180px; margin:0 auto; padding:24px 20px 60px; }
   .tab { display:none; } .tab.active { display:block; animation:fade .25s ease; }
@@ -356,17 +353,22 @@
         <div class="eyebrow">{{ p.jurisdiction }} · {{ "per employee" if p.level == "subject" else "company-wide" }}</div>
         <h3 style="margin-top:4px">{{ p.name }}</h3>
         {% if pid == "nys-hire-a-veteran" %}
-        <div class="worth"><span class="upto">up to</span><b class="num">$15,000</b><span class="per">off the tax bill, per veteran hired</span></div>
+        {% set vet_hires = company.subjects | length %}
+        <div class="worth"><span class="upto">up to</span><b class="num">${{ "{:,}".format(p.max_credit) }}</b><span class="per">off the tax bill, per veteran hired</span></div>
         <p class="small" style="margin:0">15% of a qualified veteran's first-year wages, 20% for a disabled veteran. A dollar-for-dollar credit, not a deduction.</p>
-        <div class="here">For Hudson Forge: two veterans hired in 2025, so <b>up to $30,000</b> on the table</div>
+        {% if vet_hires %}
+        <div class="here">For {{ company.name }}: {{ vet_hires }} veteran{{ "s" if vet_hires > 1 }} hired in {{ company.fiscal_year.start[:4] }}, so <b>up to ${{ "{:,}".format(vet_hires * p.max_credit) }}</b> on the table</div>
+        {% else %}
+        <div class="here">For {{ company.name }}: no veteran hires on file for {{ company.fiscal_year.start[:4] }}</div>
+        {% endif %}
         {% elif pid == "nys-hire-a-veteran-2020" %}
-        <div class="worth"><span class="upto">was</span><b class="num">$5,000</b><span class="per">per veteran, under the old rules</span></div>
+        <div class="worth"><span class="upto">was</span><b class="num">${{ "{:,}".format(p.max_credit) }}</b><span class="per">per veteran, under the old rules</span></div>
         <p class="small" style="margin:0">The older, smaller version of the same credit. We check it so the claim cites today's rules, not stale ones.</p>
         <div class="here">Replaced by the current version above</div>
         {% elif pid == "nys-additional-restaurant-rtw" %}
-        <div class="worth"><span class="upto">up to</span><b class="num">$50,000</b><span class="per">off the tax bill, per business</span></div>
+        <div class="worth"><span class="upto">up to</span><b class="num">${{ "{:,}".format(p.max_credit) }}</b><span class="per">off the tax bill, per business</span></div>
         <p class="small" style="margin:0">$5,000 for each net new restaurant job added after the pandemic.</p>
-        <div class="here">Hudson Forge isn't a restaurant, and the window has closed</div>
+        <div class="here">{{ company.name }} is{{ "" if company.is_restaurant else "n't" }} a restaurant, and the window has closed</div>
         {% else %}
         <p class="small" style="margin:0">We only state a figure once it's quoted from the official source.</p>
         {% endif %}
@@ -382,13 +384,13 @@
     <h2 style="margin:4px 0 14px">What the agent is doing right now</h2>
     <div class="window">
       <div class="titlebar"><i style="background:#e06c6c"></i><i style="background:#e8b84a"></i><i style="background:#6cc281"></i><span class="t" id="winTitle">TaxBeagle is resting</span>
-        <button class="replay" id="run" title="Play the run again">
+        <button class="replay" id="run" title="Start a real run">
           <svg class="paw" viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="8" r="2.4"/><circle cx="12" cy="5.5" r="2.4"/><circle cx="17" cy="8" r="2.4"/><path d="M12 10.5c-3.5 0-6.5 3-6.5 6 0 1.8 1.4 3 3.2 3 1.2 0 2.1-.5 3.3-.5s2.1.5 3.3.5c1.8 0 3.2-1.2 3.2-3 0-3-3-6-6.5-6z"/></svg>
-          <span id="runLabel">Replay</span>
+          <span id="runLabel">Start a real run</span>
         </button></div>
       <div class="stages" id="stages"></div>
       <div class="trace" id="trace"></div>
-      <div class="feed" id="feed"><div class="idle">Opening this tab starts the run.</div></div>
+      <div class="feed" id="feed"><div class="idle">Press “Start a real run” to begin.</div></div>
     </div>
     <div style="margin-top:24px" class="eyebrow">Math breakdown</div>
     <h2 style="margin:4px 0 12px">Every credit has its own math. None of it runs on a laptop.</h2>
@@ -433,7 +435,8 @@
     <div class="grid g3" id="credits" style="margin-top:16px"></div>
     <div class="card years" style="margin-top:16px">
       <div class="eyebrow">Never claimed before</div>
-      <h3 style="margin:4px 0 12px">Hudson Forge has hired veterans since 2019. This is the first year a credit was filed.</h3>
+      {% set vet_hires = company.subjects | length %}
+      <h3 style="margin:4px 0 12px">{{ company.name }}: {{ vet_hires }} qualified veteran{{ "s" if vet_hires != 1 }} on file for {{ company.fiscal_year.start[:4] }}. This is the first year a credit was filed.</h3>
       <div class="yearrow" id="years"></div>
       <p class="small dim" style="margin:12px 0 0">Earlier years are estimates from the same hiring pattern. Some may still be recoverable on an amended return. Ask the CPA.</p>
     </div>
@@ -491,11 +494,9 @@ function humanize(s) {
 /* ---------- tabs ---------- */
 const tabs = document.getElementById("tabs");
 tabs.onclick = e => { const b = e.target.closest("button"); if (b) showTab(b.dataset.tab); };
-let livePlayed = false;
 function showTab(t) {
   tabs.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.tab === t));
   document.querySelectorAll(".tab").forEach(s => s.classList.toggle("active", s.id === "tab-" + t));
-  if (t === "live" && !livePlayed && typeof DEMO !== "undefined" && DEMO) { livePlayed = true; playScript(); }
   if (t === "payoff" && typeof renderPayoff === "function") { lastTotal = 0; renderPayoff(); }
   try { localStorage.setItem("taxbeagle.tab", t); } catch (_) {}
 }
@@ -513,46 +514,6 @@ const I = {
   q: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>',
   flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V4h11l-1 4 4 .5-2 5H5"/></svg>',
 };
-
-/* ---------- Demo playback: the Live run tab plays a script unless ?live=1 ---------- */
-const DEMO = !new URLSearchParams(location.search).has("live");
-const SCRIPT = [
-  // [delay ms, stage index, tone, icon, sentence, technical line]
-  [600,  0, "",     "file",   "Opened the file on Hudson Forge Robotics LLC and read the team's profiles.", ["intake", "company Hudson Forge Robotics LLC"]],
-  [1800, 1, "",     "search", "Picked 2 credits worth a close look and set aside 1 that clearly doesn't apply: the restaurant return-to-work credit, since Hudson Forge isn't a restaurant.", ["plan", "2 programs, skipped 1"]],
-  [2200, 2, "ok",   "book",   "Read the official rules for NY Hire a Veteran Credit from tax.ny.gov. Quoted 11 of 11 facts word for word from the source. The program is current.", ["fetch", "New York State Hire a Veteran Credit: 11/11 cited, status current"]],
-  [1700, 2, "",     "book",   "Read the 2020 instructions for the same credit. Quoted 5 of 5 facts. This version was replaced by a newer one.", ["fetch", "New York State Hire a Veteran Credit (2020 instructions): 5/5 cited, status superseded"]],
-  [1500, 3, "info", "lock",   "Opened a sealed room for the math: a fresh sandbox with no network and no keys. It gets the quoted facts and the employee's numbers, nothing else.", ["compute", "child sandbox created: ephemeral, network_block_all, env_keys=[]"]],
-  [2300, 3, "ok",   "check",  "Elena Ramos is possibly eligible for NY Hire a Veteran Credit: $12,600. Nobody can act on it until an independent CPA confirms.", ["compute", "nys-hire-a-veteran/Elena Ramos: unverified 12600.0"]],
-  [1900, 3, "",     "x",      "David Okafor doesn't qualify this year: 988 hours is under the 1,040-hour part-time floor.", ["compute", "nys-hire-a-veteran/David Okafor: not_eligible 0.0"]],
-  [1300, 3, "",     "x",      "Neither can use the 2020 instructions: that version was replaced by the current one.", ["compute", "nys-hire-a-veteran-2020/*: not eligible (superseded)"]],
-  [1200, 3, "ok",   "check",  "Finished the check. Every figure is on hold until a CPA confirms it and a human approves it.", ["done", "run complete"]],
-  [1600, 4, "info", "phone",  "Sent Elena Ramos's claim to the CPA with a one-time code. Our figure stays hidden from them.", ["voice", "claim -> sent, cpa_code minted"]],
-  [2600, 4, "info", "phone",  "The CPA read back the code and worked the credit out on their own: fifteen percent of the wages, under the cap.", ["voice", "tool call: code ok, value 12600, confirmed=true"]],
-  [1800, 5, "ok",   "check",  "Match confirmed: $12,600 from the CPA, $12,600 from us. The database agreed, not a person. Ready for your approval.", ["gate", "fn::matches -> true; state confirmed -> ready"]],
-];
-let playing = null;
-function resetLive() {
-  const feed = document.getElementById("feed"); feed.innerHTML = '<div class="idle">Opening this tab starts the run.</div>'; feedEmpty = true;
-  document.getElementById("techlog").innerHTML = ""; stageIdx = -1; running = false; renderStages();
-}
-function playScript() {
-  if (playing) clearTimeout(playing);
-  resetLive(); stageIdx = 0; running = true; renderStages();
-  const tech = document.getElementById("techlog");
-  let i = 0;
-  const step = () => {
-    if (i >= SCRIPT.length) { running = true; stageIdx = 5; renderStages(); document.getElementById("winTitle").innerHTML = "Ready for your sign-off on the Verdict &amp; results tab"; playing = null; return; }
-    const [delay, stage, tone, icon, text, [tstep, tmsg]] = SCRIPT[i++];
-    playing = setTimeout(() => {
-      stageIdx = Math.max(stageIdx, stage); running = true; renderStages();
-      pushEvent([text, tone, I[icon]], new Date().toISOString());
-      tech.insertAdjacentHTML("beforeend", `<div><span class="at">${new Date().toTimeString().slice(0, 8)}</span><span class="s">${esc(tstep)}</span>${esc(tmsg)}</div>`); tech.scrollTop = tech.scrollHeight;
-      step();
-    }, delay);
-  };
-  step();
-}
 
 /* ---------- Tab 2: stages + narrative ---------- */
 const STAGES = [
@@ -632,7 +593,6 @@ function pushEvent([text, tone, icon], at) {
   feed.scrollTop = feed.scrollHeight;
 }
 async function loadLog() {
-  if (DEMO) return;
   const rows = (await (await fetch("/api/log")).json()).slice().reverse();  // oldest first
   const latestRun = rows.length ? rows[rows.length - 1].run_id : null;
   const tech = document.getElementById("techlog");
@@ -707,9 +667,8 @@ function stepsOf(c) {
   return [steps, at];
 }
 
-/* Exactly one claim is wired to the real CPA call: the first server-side "unverified" one. Every other card is
-   front-end only. Its Approve plays a scripted CPA call in this browser and nothing is written anywhere. */
-const local = new Map();  // claim_id -> {state, ack}
+/* The live card presents as "possibly eligible" until Approve is clicked in this session, so a stale
+   server state never blocks a fresh send: clicking Approve resets it server-side first. */
 let liveId = null;
 function assignLive(byDate) {
   if (liveId && claims.has(liveId)) return;
@@ -719,25 +678,10 @@ function assignLive(byDate) {
 }
 let liveStarted = false;  // set when Approve is clicked on the live card in this session
 function vm(c) {
-  if (c.id === liveId) {  // real card. Until Approve is clicked here, it presents as possibly eligible whatever the server says.
-    if (!liveStarted && c.state !== "unverified") return {...c, state: "unverified", cpa_value: null, cpa_at: null, human_approved_at: null, _live: true};
-    return {...c, _live: true};
-  }
-  if (!local.has(c.id)) local.set(c.id, {state: PAST.includes(c.state) || c.state === "unverified" ? "unverified" : c.state, ack: false});
-  const l = local.get(c.id), show = ["ready", "approved"].includes(l.state);
-  return {...c, state: l.state, human_approved_at: l.ack ? "local" : null, _local: true,
-          cpa_value: show ? (c.cpa_value ?? c.agent_value) : null, cpa_at: show ? (c.cpa_at || new Date().toISOString()) : null};
+  if (c.id === liveId && !liveStarted && c.state !== "unverified")
+    return {...c, state: "unverified", cpa_value: null, cpa_at: null, human_approved_at: null};
+  return c;
 }
-const PAST = ["sent", "confirmed", "ready", "approved", "rejected", "needs-info"];
-function fakeApprove(id) {
-  const l = local.get(id);
-  if (l.state === "unverified") {
-    l.state = "sent"; render();
-    setTimeout(() => { l.state = "confirmed"; render(); }, 2600);
-    setTimeout(() => { l.state = "ready"; render(); }, 4200);
-  } else if (l.state === "ready") { l.state = "approved"; render(); }
-}
-function fakeAck(id) { local.get(id).ack = true; render(); }
 function render() {
   const PRI = {approved: 0, ready: 1, sent: 2, confirmed: 2, "needs-info": 2, rejected: 2, unverified: 3, uncited: 4, compute_error: 4, not_eligible: 5};
   const byDate = [...claims.values()].filter(c => c.company_id === COMPANY.company_id).sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
@@ -794,50 +738,37 @@ function render() {
     (old.length ? `<details class="tech"><summary>${old.length} more: older versions of a credit, or claims that were replaced</summary><div style="padding-top:14px">${old.map(card).join("")}</div></details>` : "");
   renderScenarios();
 }
-/* Call transcript: the real one from the post-call webhook when we have it, otherwise a reconstruction from the claim. */
+/* Call transcript: only the verbatim recording the post-call webhook delivers. Never invented —
+   until the webhook lands, the block says so instead of reconstructing a call. */
 const transcripts = new Map();  // claim_id -> {text, at, conversation_id}
 async function loadTranscripts() {
   try { (await (await fetch("/api/transcripts")).json()).forEach(t => { if (t.claim_id && !transcripts.has(t.claim_id)) transcripts.set(t.claim_id, t); }); } catch (_) {}
-}
-function spokenMoney(v) { return v == null ? "" : Number(v).toLocaleString(); }
-function mockTranscript(c) {
-  const who = nameOf((c.agent_inputs || {}).subject_id || c.company_id), p = PEOPLE[(c.agent_inputs || {}).subject_id] || {};
-  const inp = c.agent_inputs || {};
-  const lines = [
-    ["agent", `Hi, this is TaxBeagle calling for ${COMPANY.name} about the ${shortProg(c.program_id)}. Could you read me the six-digit code on your screen?`],
-    ["cpa", "Sure. (reads the code)"],
-    ["agent", `Thanks, that checks out. This is for ${who}${p.role ? ", " + p.role.toLowerCase() : ""}, start date ${p.hire_date || "on file"}, ${Number(inp.hours_first_12_months || p.hours_first_12_months || 0).toLocaleString()} hours and $${spokenMoney(inp.wages_first_12_months || p.wages_first_12_months)} in wages over the first twelve months. What credit figure do you get?`],
-  ];
-  if (c.state === "needs-info") lines.push(["cpa", `Roughly ${spokenMoney(c.cpa_value) || "twelve six"}, I think. I'd want to double-check the hours.`], ["agent", "Understood. I'll hold this one until you can confirm a figure."]);
-  else if (c.state === "rejected") lines.push(["cpa", `I get $${spokenMoney(c.cpa_value)}. The wage number you have includes pay that doesn't qualify.`], ["agent", `To confirm: $${spokenMoney(c.cpa_value)}, final?`], ["cpa", "Yes, confirmed."], ["agent", "Recorded. We'll rework it with that correction."]);
-  else lines.push(["cpa", `Fifteen percent of the wages, under the cap. $${spokenMoney(c.cpa_value)}.`], ["agent", `To confirm: $${spokenMoney(c.cpa_value)}, final?`], ["cpa", "Yes, confirmed."], ["agent", "Recorded. Thank you."]);
-  return lines;
 }
 function transcriptBlock(c) {
   const hadCall = ["ready", "approved", "rejected", "needs-info"].includes(c.state) || (c.cpa_value != null && c.state !== "unverified" && c.state !== "sent" && c.state !== "confirmed");
   if (!hadCall) return "";
   const real = transcripts.get(c.id);
-  const lines = real ? String(real.text || "").split("\n").map(l => { const m = l.match(/^(\w+):\s*(.*)$/); return m ? [m[1].toLowerCase() === "user" ? "cpa" : "agent", m[2]] : ["agent", l]; }).filter(x => x[1]) : mockTranscript(c);
   const when = c.cpa_at ? new Date(c.cpa_at).toLocaleString() : "";
-  return `<details class="cites"><summary>Call transcript${real ? "" : " (reconstructed)"}${when ? ` · ${esc(when)}` : ""}</summary>
-    <div class="tx">${lines.map(([r, t]) => `<div class="line ${r}"><span class="r">${r === "cpa" ? "CPA" : "TaxBeagle"}</span><span>${esc(t)}</span></div>`).join("")}
-    ${real ? "" : '<div class="small dim" style="margin-top:8px">Reconstructed from the recorded call result. The verbatim transcript appears here once the post-call webhook delivers it.</div>'}</div></details>`;
+  const summary = `<summary>Call transcript${when ? ` · ${esc(when)}` : ""}</summary>`;
+  const lines = real ? String(real.text || "").split("\n").map(l => { const m = l.match(/^(\w+):\s*(.*)$/); return m ? [m[1].toLowerCase() === "user" ? "cpa" : "agent", m[2]] : ["agent", l]; }).filter(x => x[1]) : [];
+  if (!lines.length) return `<details class="cites">${summary}<div class="small dim" style="margin-top:8px">No verbatim transcript has arrived yet. It appears here only after the post-call webhook delivers the real recording.</div></details>`;
+  return `<details class="cites">${summary}
+    <div class="tx">${lines.map(([r, t]) => `<div class="line ${r}"><span class="r">${r === "cpa" ? "CPA" : "TaxBeagle"}</span><span>${esc(t)}</span></div>`).join("")}</div></details>`;
 }
 const dismissed = new Set();  // view-only: a refresh brings the claim back
 function cancel(id) { dismissed.add(id); render(); }
 function actionFor(c) {
-  const id = esc(c.id), loc = !!c._local;  // loc: front-end only
+  const id = esc(c.id);
   switch (c.state) {
-    case "unverified": return `<button class="btn" onclick="${loc ? "fakeApprove" : "startLive"}('${id}')">Approve</button><span class="small dim" style="align-self:center">goes to the CPA first</span>`;
-    case "sent": case "confirmed": return `<button class="btn" disabled style="opacity:.55">${c.state === "sent" ? "Calling the CPA" : "CPA answered, checking the match"}<span class="typing" style="margin-left:8px"><i style="background:#fff"></i><i style="background:#fff"></i><i style="background:#fff"></i></span></button>${loc ? "" : `<a class="btn ghost" href="/cpa?claim=${encodeURIComponent(c.id)}" target="_blank">Open the CPA's page</a>`}`;
+    case "unverified": return `<button class="btn" onclick="startLive('${id}')">Approve</button><span class="small dim" style="align-self:center">goes to the CPA first</span>`;
+    case "sent": case "confirmed": return `<button class="btn" disabled style="opacity:.55">${c.state === "sent" ? "Calling the CPA" : "CPA answered, checking the match"}<span class="typing" style="margin-left:8px"><i style="background:#fff"></i><i style="background:#fff"></i><i style="background:#fff"></i></span></button><a class="btn ghost" href="/cpa?claim=${encodeURIComponent(c.id)}" target="_blank">Open the CPA's page</a>`;
     case "needs-info": return `<button class="btn" disabled style="opacity:.55">CPA must confirm first</button>`;
     case "rejected": return `<button class="btn" disabled style="opacity:.55">CPA disagreed. Corrected claim coming</button>`;
-    case "ready": return `<button class="btn ok" onclick="${loc ? "fakeApprove" : "approve"}('${id}')">Approve ${money(c.agent_value)}</button>`;
+    case "ready": return `<button class="btn ok" onclick="approve('${id}')">Approve ${money(c.agent_value)}</button>`;
     case "approved": return "";
-    default: return c.human_approved_at ? "" : `<button class="btn" onclick="${loc ? "fakeAck" : "acknowledge"}('${id}')">Approve verdict</button>`;
+    default: return c.human_approved_at ? "" : `<button class="btn" onclick="acknowledge('${id}')">Approve verdict</button>`;
   }
 }
-function localAck(id) { local.get(id).ack = true; render(); }
 async function acknowledge(id) {
   const r = await fetch(`/api/claims/${encodeURIComponent(id)}/acknowledge`, {method: "POST"});
   if (!r.ok) alert(await r.text());
@@ -970,19 +901,16 @@ function renderScenarios() {
 }
 
 /* ---------- wiring ---------- */
-if (!DEMO) document.getElementById("runLabel").textContent = "Start a real run";
 document.getElementById("run").onclick = async e => {
   const btn = e.currentTarget; btn.disabled = true; setTimeout(() => btn.disabled = false, 4000);
-  if (DEMO) { playScript(); return; }
   await fetch("/api/run", {method: "POST"});
   stageIdx = 0; running = true; renderStages();
 };
-if (DEMO && document.getElementById("tab-live").classList.contains("active") && !livePlayed) { livePlayed = true; playScript(); }
 new EventSource("/api/stream").onmessage = e => {
   const c = JSON.parse(e.data); if (!c.id) return;
   claims.set(c.id, c); render();
   const key = c.state + "|" + (c.human_approved_at || "");
-  if (!DEMO && seenClaimState.get(c.id) !== key) {
+  if (seenClaimState.get(c.id) !== key) {
     seenClaimState.set(c.id, key);
     const n = narrateClaim(c); if (n) pushEvent(n, c.cpa_at || new Date().toISOString());
   }
