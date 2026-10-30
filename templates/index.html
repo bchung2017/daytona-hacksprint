@@ -1003,8 +1003,7 @@ function renderScenarios() {
 
 /* ---------- wiring ---------- */
 document.getElementById("run").onclick = async e => {
-  const btn = e.currentTarget; btn.disabled = true; setTimeout(() => btn.disabled = false, 4000);
-  await fetch("/api/run", {method: "POST"});
+  await withProgress(e.currentTarget, () => fetch("/api/run", {method: "POST"}));
   stageIdx = 0; running = true; renderStages();
 };
 const stream = new EventSource("/api/stream");
