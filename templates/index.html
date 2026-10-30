@@ -36,6 +36,10 @@
   nav .sep { width:1px; background:var(--line); margin:4px 4px; }
   nav button.info { color:var(--brown); } nav button.info .n.i { background:transparent; border:1.5px solid var(--brown); color:var(--brown); font-family:Fraunces, serif; font-style:italic; }
   nav button.info.active { background:var(--brown); } nav button.info.active .n.i { border-color:rgba(255,255,255,.6); color:var(--white); }
+  .pulse { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; color:var(--dim); background:var(--cream); border:1px solid var(--line); border-radius:999px; padding:6px 12px; flex:none; }
+  .pulse i { width:9px; height:9px; border-radius:50%; background:var(--dim); flex:none; animation:pulse 1.4s ease-in-out infinite; }
+  .pulse.connected { color:var(--ok); border-color:var(--ok-soft); } .pulse.connected i { background:var(--ok); }
+  .pulse.reconnecting { color:var(--bad); border-color:var(--bad); } .pulse.reconnecting i { background:var(--bad); }
 
   main { max-width:1180px; margin:0 auto; padding:24px 20px 60px; }
   .tab { display:none; } .tab.active { display:block; animation:fade .25s ease; }
@@ -260,6 +264,7 @@
       <span class="sep"></span>
       <button data-tab="outcomes" class="info"><span class="n i">i</span><span class="t">Possible verdicts</span></button>
     </nav>
+    <div class="pulse" id="connPulse" role="status" aria-live="polite"><i></i><span>Connecting…</span></div>
   </div>
 </header>
 
@@ -1003,8 +1008,8 @@ document.getElementById("run").onclick = async e => {
   stageIdx = 0; running = true; renderStages();
 };
 const stream = new EventSource("/api/stream");
-stream.onopen = () => { streamError = false; renderStages(); };
-stream.onerror = () => { streamError = true; renderStages(); };
+stream.onopen = () => { streamError = false; setPulse("connected"); renderStages(); };
+stream.onerror = () => { streamError = true; setPulse("reconnecting"); renderStages(); };
 stream.onmessage = e => {
   const c = JSON.parse(e.data); if (!c.id) return;
   claims.set(c.id, c); render();
@@ -1015,6 +1020,13 @@ stream.onmessage = e => {
   }
   loadLog();
 };
+/* One word per state: the pill in the header is the idle session's heartbeat. */
+function setPulse(state) {
+  const p = document.getElementById("connPulse");
+  p.className = "pulse " + state;
+  p.querySelector("span").textContent = state === "connected" ? "Live · connected"
+    : state === "reconnecting" ? "Live · reconnecting" : "Connecting…";
+}
 renderStages(); renderScenarios(); drawFlow(); renderPayoff(false);
 loadTranscripts().then(loadClaims).then(() => { [...claims.values()].forEach(c => seenClaimState.set(c.id, c.state + "|" + (c.human_approved_at || ""))); loadLog(); });
 setInterval(loadLog, 2000); setInterval(() => loadTranscripts().then(render), 10000);
