@@ -4,6 +4,7 @@
     "name": "New York State Hire a Veteran Credit",
     "jurisdiction": "NY",
     "level": "subject",
+    "max_credit": 15000,
     "supersedes": "nys-hire-a-veteran-2020",
     "urls": [
       "https://www.tax.ny.gov/pit/credits/hire_a_veteran_credit.htm",
@@ -15,6 +16,7 @@
     "name": "New York State Hire a Veteran Credit (2020 instructions)",
     "jurisdiction": "NY",
     "level": "subject",
+    "max_credit": 5000,
     "superseded_by": "nys-hire-a-veteran",
     "urls": [
       "https://www.tax.ny.gov/pdf/2020/corp/ct643i_2020.pdf"
@@ -25,6 +27,7 @@
     "name": "New York State Additional Restaurant Return-to-Work Tax Credit",
     "jurisdiction": "NY",
     "level": "company",
+    "max_credit": 50000,
     "urls": [
       "https://www.tax.ny.gov/pit/credits/additional-restaurant-return-to-work-credit.htm",
       "https://www.tax.ny.gov/pdf/2024/corp/ct658i_2024.pdf"

@@ -33,6 +33,7 @@
     "name": "New York State Hire a Veteran Credit",
     "jurisdiction": "NY",
     "level": "subject",
+    "max_credit": 15000,
     "urls": [
       "https://www.tax.ny.gov/pit/credits/hire_a_veteran_credit.htm",
       "https://www.tax.ny.gov/pdf/current_forms/ct/ct643i.pdf"

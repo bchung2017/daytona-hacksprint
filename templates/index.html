@@ -353,17 +353,22 @@
         <div class="eyebrow">{{ p.jurisdiction }} · {{ "per employee" if p.level == "subject" else "company-wide" }}</div>
         <h3 style="margin-top:4px">{{ p.name }}</h3>
         {% if pid == "nys-hire-a-veteran" %}
-        <div class="worth"><span class="upto">up to</span><b class="num">$15,000</b><span class="per">off the tax bill, per veteran hired</span></div>
+        {% set vet_hires = company.subjects | length %}
+        <div class="worth"><span class="upto">up to</span><b class="num">${{ "{:,}".format(p.max_credit) }}</b><span class="per">off the tax bill, per veteran hired</span></div>
         <p class="small" style="margin:0">15% of a qualified veteran's first-year wages, 20% for a disabled veteran. A dollar-for-dollar credit, not a deduction.</p>
-        <div class="here">For Hudson Forge: two veterans hired in 2025, so <b>up to $30,000</b> on the table</div>
+        {% if vet_hires %}
+        <div class="here">For {{ company.name }}: {{ vet_hires }} veteran{{ "s" if vet_hires > 1 }} hired in {{ company.fiscal_year.start[:4] }}, so <b>up to ${{ "{:,}".format(vet_hires * p.max_credit) }}</b> on the table</div>
+        {% else %}
+        <div class="here">For {{ company.name }}: no veteran hires on file for {{ company.fiscal_year.start[:4] }}</div>
+        {% endif %}
         {% elif pid == "nys-hire-a-veteran-2020" %}
-        <div class="worth"><span class="upto">was</span><b class="num">$5,000</b><span class="per">per veteran, under the old rules</span></div>
+        <div class="worth"><span class="upto">was</span><b class="num">${{ "{:,}".format(p.max_credit) }}</b><span class="per">per veteran, under the old rules</span></div>
         <p class="small" style="margin:0">The older, smaller version of the same credit. We check it so the claim cites today's rules, not stale ones.</p>
         <div class="here">Replaced by the current version above</div>
         {% elif pid == "nys-additional-restaurant-rtw" %}
-        <div class="worth"><span class="upto">up to</span><b class="num">$50,000</b><span class="per">off the tax bill, per business</span></div>
+        <div class="worth"><span class="upto">up to</span><b class="num">${{ "{:,}".format(p.max_credit) }}</b><span class="per">off the tax bill, per business</span></div>
         <p class="small" style="margin:0">$5,000 for each net new restaurant job added after the pandemic.</p>
-        <div class="here">Hudson Forge isn't a restaurant, and the window has closed</div>
+        <div class="here">{{ company.name }} is{{ "" if company.is_restaurant else "n't" }} a restaurant, and the window has closed</div>
         {% else %}
         <p class="small" style="margin:0">We only state a figure once it's quoted from the official source.</p>
         {% endif %}
@@ -430,7 +435,8 @@
     <div class="grid g3" id="credits" style="margin-top:16px"></div>
     <div class="card years" style="margin-top:16px">
       <div class="eyebrow">Never claimed before</div>
-      <h3 style="margin:4px 0 12px">Hudson Forge has hired veterans since 2019. This is the first year a credit was filed.</h3>
+      {% set vet_hires = company.subjects | length %}
+      <h3 style="margin:4px 0 12px">{{ company.name }}: {{ vet_hires }} qualified veteran{{ "s" if vet_hires != 1 }} on file for {{ company.fiscal_year.start[:4] }}. This is the first year a credit was filed.</h3>
       <div class="yearrow" id="years"></div>
       <p class="small dim" style="margin:12px 0 0">Earlier years are estimates from the same hiring pattern. Some may still be recoverable on an amended return. Ask the CPA.</p>
     </div>
